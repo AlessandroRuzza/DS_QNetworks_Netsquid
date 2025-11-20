@@ -35,10 +35,8 @@ def start_pingPong(nodeA, nodeB):
     ping.start()
     pong.start()
 
-def main():
-    NODE_DIST = 10
-    depolar_freq = 5e4
-    nodeA, nodeB = create_directConnected_nodes(NODE_DIST, [0.0, 0.0], depolar_freq)   
+def main(node_distance, depolar_freq):
+    nodeA, nodeB = create_directConnected_nodes(node_distance, [0.0, 0.0], depolar_freq)   
     start_pingPong(nodeA, nodeB) 
     stats:ns.util.SimStats = ns.sim_run(duration=205, magnitude=ns.MICROSECOND) #type: ignore
     print(stats.summary())
@@ -46,4 +44,4 @@ def main():
     print(stats.data)
 
 if __name__ == "__main__":
-    main()
+    main(node_distance=10, depolar_freq=5e4)
