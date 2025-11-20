@@ -2,9 +2,6 @@ import netsquid as ns
 from netsquid.nodes import DirectConnection, Node
 from netsquid.components import QuantumChannel
 from netsquid.protocols import NodeProtocol
-node_ping = Node(name="Ping")
-node_pong = Node(name="Pong")
-
 from netsquid.components.models import DelayModel
 
 class PingPongDelayModel(DelayModel):
@@ -55,23 +52,28 @@ class PingPongProtocol(NodeProtocol):
             # Receive (RX) qubit on the port's input:
             message = self.node.ports["qubitIO"].rx_input()
             qubit = message.items[0]
+            # print("Rcv: \n", qubit.qstate.qrepr.ket)
             meas, prob = ns.qubits.measure(qubit, observable=self.observable)
-            print(f"{ns.sim_time():5.1f}: {self.node.name} measured "
+            print(f"{ns.sim_time(magnitude=ns.MICROSECOND):5.1f}: {self.node.name} measured "
                   f"{self.basis[meas]} with probability {prob:.2f}")
             # Send (TX) qubit to the other node via connection:
             self.node.ports["qubitIO"].tx_output(qubit)
 
-distance = 2.74 / 1000  # default unit of length in channels is km
-connection = make_bidirectional_channel(distance) 
-node_ping.connect_to(remote_node=node_pong, connection=connection,
-                     local_port_name="qubitIO", remote_port_name="qubitIO")
+if __name__ == "__main__":
+    node_ping = Node(name="Ping")
+    node_pong = Node(name="Pong")
 
-q = ns.qubits.create_qubits(1)
-ping = PingPongProtocol(node_ping, ns.Z, q[0])
-pong = PingPongProtocol(node_pong, ns.X)
+    distance = 2.74 / 1000  # default unit of length in channels is km
+    connection = make_bidirectional_channel(distance) 
+    node_ping.connect_to(remote_node=node_pong, connection=connection,
+                        local_port_name="qubitIO", remote_port_name="qubitIO")
 
-ping.start()
-pong.start()
-# Run the simulation until no more events remain (or specify a duration)
-run_stats = ns.sim_run(duration=300)
-print(run_stats)
+    q = ns.qubits.create_qubits(1)
+    ping = PingPongProtocol(node_ping, ns.Z, q[0])
+    pong = PingPongProtocol(node_pong, ns.X)
+
+    ping.start()
+    pong.start()
+    # Run the simulation until no more events remain (or specify a duration)
+    run_stats = ns.sim_run(duration=300)
+    print(run_stats)
