@@ -1,7 +1,7 @@
 import netsquid as ns
 from netsquid.nodes import DirectConnection, Node
 from netsquid.components import FibreDelayModel, FibreLossModel, QuantumChannel
-from netsquid.components.models import DepolarNoiseModel, DephaseNoiseModel, T1T2NoiseModel
+from netsquid.components import DepolarNoiseModel, DephaseNoiseModel
 
 class SymmetricDirectConnection(DirectConnection):
     def __init__(self, name, L:int, loss_model, delay_model, noise_model) -> None:
@@ -40,8 +40,10 @@ def main():
     depolar_freq = 5e4
     nodeA, nodeB = create_directConnected_nodes(NODE_DIST, [0.0, 0.0], depolar_freq)   
     start_pingPong(nodeA, nodeB) 
-    stats = ns.sim_run(duration=205, magnitude=ns.MICROSECOND) #type: ignore
-    print(stats)
+    stats:ns.util.SimStats = ns.sim_run(duration=205, magnitude=ns.MICROSECOND) #type: ignore
+    print(stats.summary())
+    print("Raw data dictionary entries:")
+    print(stats.data)
 
 if __name__ == "__main__":
     main()

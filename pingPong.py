@@ -52,9 +52,9 @@ class PingPongProtocol(NodeProtocol):
             # Receive (RX) qubit on the port's input:
             message = self.node.ports["qubitIO"].rx_input()
             qubit = message.items[0]
-            # print("Rcv: \n", qubit.qstate.qrepr.ket)
+            print("Rcv: \n", qubit.qstate.qrepr.ket)
             meas, prob = ns.qubits.measure(qubit, observable=self.observable)
-            print(f"{ns.sim_time(magnitude=ns.MICROSECOND):5.1f}: {self.node.name} measured "
+            print(f"{ns.sim_time(magnitude=ns.MICROSECOND):5.1f}: {self.node.name} measured " #type:ignore
                   f"{self.basis[meas]} with probability {prob:.2f}")
             # Send (TX) qubit to the other node via connection:
             self.node.ports["qubitIO"].tx_output(qubit)
