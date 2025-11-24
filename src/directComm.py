@@ -109,7 +109,7 @@ def setup_sim(
         AProtocol.start()
         BProtocol.start()
 
-        stats = ns.sim_run(magnitude=ns.MICROSECOND)
+        stats = ns.sim_run(magnitude=ns.MICROSECOND) 
 
         simulation_end_time = ns.sim_time(magnitude=ns.MICROSECOND)
         total_qubits_sent = BProtocol.received_id
