@@ -1,48 +1,67 @@
 from directComm import *
 import matplotlib.pyplot as plt
 import numpy as np
-import os, re
+import re, os
 from pathlib import Path
 
 ############## SUCCESS TIME ##################################################
 def get_img_path(label:str):
-    Path("img").mkdir(parents=True, exist_ok=True)
+    # resolve output directory relative to this file (avoid changing cwd)
+    base = Path(__file__).resolve().parent.parent  # repo root
+    outdir = base / "img"
+    outdir.mkdir(parents=True, exist_ok=True)
     label = re.sub(r'\s+', '_', str(label)).strip()          # collapse whitespace/newlines
     label = re.sub(r'[^A-Za-z0-9._-]', '_', label)           # keep a safe subset of chars
+    label = re.sub(r'[()]', '', label)
     label = label[:190] + ".png"
-    imgpath = Path("img") / label
+    imgpath = outdir / label
     return imgpath 
 
-def plot_pmf_arrival_times(arrival_times, bins, title:str):
+def unique_and_probs(data):
+    count_times = [(v, data.count(v)) for v in set(data)]
+    sorted_times = sorted(count_times)
+    
+    unique_sorted = [v[0] for v in sorted_times] 
+    counts_sorted = [v[1] for v in sorted_times]
+    # normalize counts to probabilities
+    total = sum(counts_sorted)
+    probs = [c / total for c in counts_sorted] if total > 0 else counts_sorted
+
+    return unique_sorted, probs
+
+def plot_pmf_arrival_times(arrival_times:dict, title:str):
     plt.figure(figsize=(10, 6))
-    plt.hist(
-        arrival_times,
-        bins=bins,
-        density=False,
-        weights=[1 / len(arrival_times)] * len(arrival_times),
-        alpha=0.7,
-        edgecolor="black",
-        color="steelblue",
-    )
+    for name, data in arrival_times.items():
+        unique_sorted, probs = unique_and_probs(data)
+        x = np.array(unique_sorted, dtype=float)
+        y = np.array(probs, dtype=float)
+        plt.plot(x, y, label=name, linewidth=2, marker='o', linestyle='-')
+
+    plt.xscale('log')
     plt.xlabel("Arrival Time (μs)", fontsize=12)
     plt.ylabel("Probability", fontsize=12)
     plt.title(title, fontsize=14)
-    plt.grid(True, alpha=0.3)
+    plt.legend(fontsize=11)
+    plt.grid(True, alpha=0.3, which='both')
     plt.tight_layout()
     plt.savefig(get_img_path(title), dpi=300)
     plt.show()
     plt.close()
 
-def plot_cdf_arrival_times(arrival_times, title):
-    arrival_times_sorted = sorted(arrival_times)
-    n = len(arrival_times_sorted)
-    probabilities = np.arange(1, n + 1) / n
-
+def plot_cdf_arrival_times(arrival_times:dict, title):
     plt.figure(figsize=(10, 6))
-    plt.plot(arrival_times_sorted, probabilities, linewidth=2, color="steelblue")
+
+    for name, data in arrival_times.items():
+        unique_sorted, probs = unique_and_probs(data)
+        cumulative_probs = [sum(probs[:i+1]) for i in range(len(probs))]
+        plt.plot(unique_sorted, cumulative_probs, label=name,
+                 linewidth=2, marker='o')
+
+    plt.xscale('log')
     plt.xlabel("Time (μs)", fontsize=12)
     plt.ylabel("P(Arrival Time ≤ t)", fontsize=12)
     plt.title(title, fontsize=14)
+    plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(get_img_path(title), dpi=300)
@@ -51,26 +70,25 @@ def plot_cdf_arrival_times(arrival_times, title):
 
 ################## FIDELITY ##################################################
 
-def plot_fidelity_distribution(fidelities, bins, title):
+def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title):
     plt.figure(figsize=(10, 6))
-    plt.hist(
-        fidelities,
-        bins=bins,
-        density=False,
-        weights=[1 / len(fidelities)] * len(fidelities),
-        alpha=0.7,
-        edgecolor="black",
-        color="coral",
-    )
-    plt.axvline(
-        x=0.9,
+    for name, data in fidelities.items():
+        timed_fidelities = zip(arrival_times[name], data)
+        sort = sorted(set(timed_fidelities), key=lambda f: f[0])
+        unique_times = [t[0] for t in sort]
+        unique_fids = [t[1] for t in sort]
+        plt.plot(unique_times, unique_fids, label=name,
+                 linewidth=2, marker='o')
+
+    plt.axhline(
+        y=0.9,
         color="red",
         linestyle="--",
         linewidth=2,
         label="Quality threshold (F=0.9)",
     )
-    plt.xlabel("Fidelity", fontsize=12)
-    plt.ylabel("Probability", fontsize=12)
+    plt.xlabel("Arrival time (μs)", fontsize=12)
+    plt.ylabel("Fidelity", fontsize=12)
     plt.title(title, fontsize=14)
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
@@ -81,84 +99,71 @@ def plot_fidelity_distribution(fidelities, bins, title):
 
 # Define different parameter sets to test
 param_sets = [ 
-    # Base case
     {
-        "distance": 20,
-        "p_loss_init": 0.5,
-        "p_loss_length": 0.05,
-        "depolar_freq": 5_000,
-        "name": "Base case",
+        "name": "Ideal case",
+        "p_loss_init": 0.0,
+        "p_loss_length": 0.0,
+        "depolar_freq": 0,
     },
-    # Strong loss values
     {
-        "distance": 20,
+        "name": "High initial loss fibre",
         "p_loss_init": 0.9,
         "p_loss_length": 0.02,
         "depolar_freq": 5_000,
-        "name": "Strong init loss",
     },
-    # High-loss fibre (short distance)
     {
-        "distance": 10,
+        "name": "High length loss fibre",
         "p_loss_init": 0.0,
-        "p_loss_length": 0.2,
+        "p_loss_length": 0.5,
         "depolar_freq": 3_000,
-        "name": "High-loss fibre",
     },
-    # High-loss fibre (long distance)
     {
-        "distance": 100,
-        "p_loss_init": 0.0,
-        "p_loss_length": 0.2,
-        "depolar_freq": 3_000,
-        "name": "High-loss fibre",
-    },
-    # Noise-dominated (bad fidelity, short distance)
-    {
-        "distance": 10,
+        "name": "Noise-dominated fibre",
         "p_loss_init": 0.5,
         "p_loss_length": 0.05,
         "depolar_freq": 10_000,
-        "name": "Noise-dominated",
-    },
-    # Noise-dominated (bad fidelity, long distance)
-    {
-        "distance": 100,
-        "p_loss_init": 0.5,
-        "p_loss_length": 0.05,
-        "depolar_freq": 10_000,
-        "name": "Noise-dominated",
     },
 ]
 
 # Run simulations for all parameter sets
 all_results = {}
 shots = 2000  # Reduce for faster testing
+distances = [5, 10, 20, 50] #, 100, 200, 500]
 
-for params in param_sets:
-    params['label'] = f"{params['name']} ({params['distance']}km, {params['p_loss_init']} init, \
-                        {params['p_loss_length']}/km, {params['depolar_freq']}kHz)"
+def label_param(params):
+    return  f"{params['name']} ({params['p_loss_init']} init, " + \
+            f"{params['p_loss_length']}dB/km, {params['depolar_freq']/1000}kHz)"
 
 print("Running simulations with different parameters...")
 for i, params in enumerate(param_sets):
-    print(f"Running set {i+1}/{len(param_sets)}: {params['label']}")
+    label = label_param(params)
+    all_results[label] = []
+    results = []
+    for dist in distances:
+        print(f"Running set {i+1}/{len(param_sets)}: {dist}km - {label}")
 
-    results = setup_sim(
-        shots=shots,
-        distance=params["distance"],
-        p_loss_init=params["p_loss_init"],
-        p_loss_length=params["p_loss_length"],
-        depolar_freq=params["depolar_freq"],
-    )
+        results.append(setup_sim(
+            shots=shots,
+            distance=dist,
+            p_loss_init=params["p_loss_init"],
+            p_loss_length=params["p_loss_length"],
+            depolar_freq=params["depolar_freq"],
+        ))
 
-    all_results[params["label"]] = {
-        "params": params,
-        "sim_end_times": [res[0] for res in results],
-        "total_qubits_sent": [res[1] for res in results],
-        "arrival_times": [res[2] for res in results],
-        "fidelities": [res[3] for res in results],
-    }
-
+    all_results[label] = {}
+    for d in distances:
+        all_results[label] = {
+            "sim_end_times": {},
+            "total_qubits_sent": {},
+            "arrival_times": {},
+            "fidelities": {},
+        }
+    for d, run in zip(distances, results):
+        all_results[label]["sim_end_times"][f"{d}km"] = [res[0] for res in run]
+        all_results[label]["total_qubits_sent"][f"{d}km"] = [res[1] for res in run]
+        all_results[label]["arrival_times"][f"{d}km"] = [res[2] for res in run]
+        all_results[label]["fidelities"][f"{d}km"] = [res[3] for res in run]
+        
 print("All simulations completed!")
 
 for label, data in all_results.items():
@@ -176,11 +181,11 @@ for label, data in all_results.items():
 
     # Plots (one figure per metric per set)
     plot_pmf_arrival_times(
-        arrival_times, bins=50, title=f"PMF of arrival times\n{label}"
+        arrival_times, title=f"PMF of arrival times\n{label}"
     )
     plot_cdf_arrival_times(
         arrival_times, title=f"CDF of arrival times\n{label}"
     )
     plot_fidelity_distribution(
-        fidelities, bins=30, title=f"Fidelity distribution\n{label}"
+        arrival_times, fidelities, title=f"Fidelity distribution\n{label}"
     )

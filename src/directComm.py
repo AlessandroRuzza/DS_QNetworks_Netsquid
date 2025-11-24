@@ -51,7 +51,7 @@ class SendProtocol(NodeProtocol):
             self.qubit = qubits[0]
 
             # Time in nanoseconds
-            yield self.await_timer(50e6)  # 50 microseconds
+            yield self.await_timer(100e3)  # 100 microseconds = 1 round trip
 
 class ReceiveProtocol(NodeProtocol):
     def __init__(self, node, stop_flag):
@@ -79,7 +79,7 @@ def setup_sim(
     distance=20,
     p_loss_init=0.0,
     p_loss_length=0.0,
-    depolar_freq=10_000,
+    depolar_freq:float=10_000,
 ):
     """
     Setup and run a Netsquid simulation with specified parameters.
@@ -126,10 +126,13 @@ def setup_sim(
     return results
 
 if __name__ == "__main__":
-    results = setup_sim(p_loss_init=0.5, shots=int(1e4))
-    _, nTries, _, fidelities = zip(*results)
+    import sys
+    results = setup_sim(distance=int(sys.argv[1]), p_loss_init=0.5, shots=int(1e4), depolar_freq=1e5)
+    _, nTries, arrival_times, fidelities = zip(*results)
     avgTries = float(sum(nTries)) / len(nTries)
     print(f"Average tries = {avgTries}")
+    avgTime = float(sum(arrival_times)) / len(arrival_times)
+    print(f"Average arrival time = {avgTime}")
 
     unique_fids = set(fidelities)
     print("Num diff. fidelities =", len(unique_fids), f" ; {unique_fids}")
