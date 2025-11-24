@@ -1,2 +1,0 @@
-import netsquid as ns
-
