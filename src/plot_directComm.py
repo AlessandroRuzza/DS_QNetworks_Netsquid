@@ -126,66 +126,67 @@ param_sets = [
 ]
 
 # Run simulations for all parameter sets
-all_results = {}
-shots = 2000  # Reduce for faster testing
-distances = [5, 10, 20, 50] #, 100, 200, 500]
+if __name__ == "__main__":
+    all_results = {}
+    shots = 2000  # Reduce for faster testing
+    distances = [5, 10, 20, 50] #, 100, 200, 500]
 
-def label_param(params):
-    return  f"{params['name']} ({params['p_loss_init']} init, " + \
-            f"{params['p_loss_length']}dB/km, {params['depolar_freq']/1000}kHz)"
+    def label_param(params):
+        return  f"{params['name']} ({params['p_loss_init']} init, " + \
+                f"{params['p_loss_length']}dB/km, {params['depolar_freq']/1000}kHz)"
 
-print("Running simulations with different parameters...")
-for i, params in enumerate(param_sets):
-    label = label_param(params)
-    all_results[label] = []
-    results = []
-    for dist in distances:
-        print(f"Running set {i+1}/{len(param_sets)}: {dist}km - {label}")
+    print("Running simulations with different parameters...")
+    for i, params in enumerate(param_sets):
+        label = label_param(params)
+        all_results[label] = []
+        results = []
+        for dist in distances:
+            print(f"Running set {i+1}/{len(param_sets)}: {dist}km - {label}")
 
-        results.append(setup_sim(
-            shots=shots,
-            distance=dist,
-            p_loss_init=params["p_loss_init"],
-            p_loss_length=params["p_loss_length"],
-            depolar_freq=params["depolar_freq"],
-        ))
+            results.append(setup_sim(
+                shots=shots,
+                distance=dist,
+                p_loss_init=params["p_loss_init"],
+                p_loss_length=params["p_loss_length"],
+                depolar_freq=params["depolar_freq"],
+            ))
 
-    all_results[label] = {}
-    for d in distances:
-        all_results[label] = {
-            "sim_end_times": {},
-            "total_qubits_sent": {},
-            "arrival_times": {},
-            "fidelities": {},
-        }
-    for d, run in zip(distances, results):
-        all_results[label]["sim_end_times"][f"{d}km"] = [res[0] for res in run]
-        all_results[label]["total_qubits_sent"][f"{d}km"] = [res[1] for res in run]
-        all_results[label]["arrival_times"][f"{d}km"] = [res[2] for res in run]
-        all_results[label]["fidelities"][f"{d}km"] = [res[3] for res in run]
-        
-print("All simulations completed!")
+        all_results[label] = {}
+        for d in distances:
+            all_results[label] = {
+                "sim_end_times": {},
+                "total_qubits_sent": {},
+                "arrival_times": {},
+                "fidelities": {},
+            }
+        for d, run in zip(distances, results):
+            all_results[label]["sim_end_times"][f"{d}km"] = [res[0] for res in run]
+            all_results[label]["total_qubits_sent"][f"{d}km"] = [res[1] for res in run]
+            all_results[label]["arrival_times"][f"{d}km"] = [res[2] for res in run]
+            all_results[label]["fidelities"][f"{d}km"] = [res[3] for res in run]
+            
+    print("All simulations completed!")
 
-for label, data in all_results.items():
-    print(f"\n=== {label} ===")
-    sim_end_times = data["sim_end_times"]
-    total_qubits_sent = data["total_qubits_sent"]
-    arrival_times = data["arrival_times"]
-    fidelities = data["fidelities"]
+    for label, data in all_results.items():
+        print(f"\n=== {label} ===")
+        sim_end_times = data["sim_end_times"]
+        total_qubits_sent = data["total_qubits_sent"]
+        arrival_times = data["arrival_times"]
+        fidelities = data["fidelities"]
 
-    # Print stats
-    # sim_duration_stats(sim_end_times)
-    # qubits_stats(total_qubits_sent)
-    # arrival_times_stats(arrival_times)
-    # fidelity_stats(fidelities)
+        # Print stats
+        # sim_duration_stats(sim_end_times)
+        # qubits_stats(total_qubits_sent)
+        # arrival_times_stats(arrival_times)
+        # fidelity_stats(fidelities)
 
-    # Plots (one figure per metric per set)
-    plot_pmf_arrival_times(
-        arrival_times, title=f"PMF of arrival times\n{label}"
-    )
-    plot_cdf_arrival_times(
-        arrival_times, title=f"CDF of arrival times\n{label}"
-    )
-    plot_fidelity_distribution(
-        arrival_times, fidelities, title=f"Fidelity distribution\n{label}"
-    )
+        # Plots (one figure per metric per set)
+        plot_pmf_arrival_times(
+            arrival_times, title=f"PMF of arrival times\n{label}"
+        )
+        plot_cdf_arrival_times(
+            arrival_times, title=f"CDF of arrival times\n{label}"
+        )
+        plot_fidelity_distribution(
+            arrival_times, fidelities, title=f"Fidelity distribution\n{label}"
+        )
