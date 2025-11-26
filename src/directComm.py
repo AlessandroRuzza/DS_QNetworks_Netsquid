@@ -2,7 +2,8 @@ import netsquid as ns
 from netsquid.nodes import DirectConnection, Node
 from netsquid.protocols import NodeProtocol
 from netsquid.components import FibreDelayModel, FibreLossModel, QuantumChannel, Message
-from netsquid.components import DepolarNoiseModel, DephaseNoiseModel
+from netsquid.components import T1T2NoiseModel
+ns.set_qstate_formalism(ns.qubits.DenseDMRepr)
 
 class SymmetricDirectConnection(DirectConnection):
     def __init__(self, name, L:int, loss_model, delay_model, noise_model) -> None:
@@ -15,23 +16,27 @@ class SymmetricDirectConnection(DirectConnection):
         baChannel = QuantumChannel("B->A", length=L, models=modelDict)
         super().__init__(name, abChannel, baChannel)
 
-def create_directConnected_nodes(distance: int, p: list[float], depolar_freq):
+def create_directConnected_nodes(distance: int, p: list[float], t1:float,t2:float):
     assert len(p) >= 2
     portName = "qubitIO"
     nodeA = Node("nodeA", port_names=[portName])
     nodeB = Node("nodeB", port_names=[portName])
     conn = SymmetricDirectConnection("AB_channel", distance, 
                                      FibreLossModel(p[0], p[1]), FibreDelayModel(), 
-                                     DepolarNoiseModel(depolar_freq))
+                                     T1T2NoiseModel(t1,t2)) #type: ignore
     nodeA.connect_to(remote_node=nodeB, connection=conn,
                         local_port_name=portName, remote_port_name=portName)
     return nodeA, nodeB
 
 class SendProtocol(NodeProtocol):
-    def __init__(self, node, stop_flag):
+    def __init__(self, node, stop_flag, timeout_us:float):
+        """
+        timeout_us (float) : Retransmit timeout expressed in microseconds.
+        """
         super().__init__(node)
         self.qbitSent = 0
         self.stop_flag = stop_flag
+        self.timeout = timeout_us
 
     def produce_bell_pair(self):
         q1, q2 = ns.qubits.create_qubits(2)
@@ -51,7 +56,7 @@ class SendProtocol(NodeProtocol):
             self.qubit = qubits[0]
 
             # Time in nanoseconds
-            yield self.await_timer(100e3)  # 100 microseconds = 1 round trip
+            yield self.await_timer(self.timeout)  # time in microseconds should be roughly 1 round trip
 
 class ReceiveProtocol(NodeProtocol):
     def __init__(self, node, stop_flag):
@@ -75,11 +80,12 @@ class ReceiveProtocol(NodeProtocol):
         self.received_id = msg.meta["meta"]["id"]
         
 def setup_sim(
-    shots=100,
-    distance=20,
+    shots,
+    distance,
     p_loss_init=0.0,
     p_loss_length=0.0,
-    depolar_freq:float=10_000,
+    t1:float=0.0,
+    t2:float=0.0,
 ):
     """
     Setup and run a Netsquid simulation with specified parameters.
@@ -95,15 +101,16 @@ def setup_sim(
       (simulation_end_time, total_qubits_sent, arrival_time, fidelity) for each simulation
     """
     results = []
+    C = 2e5 / 1e9 # [km/ns] speed of light in fibre
     for _ in range(shots):
         ns.sim_reset()
 
         nodeA, nodeB = create_directConnected_nodes(
-            distance, [p_loss_init, p_loss_length], depolar_freq
+            distance, [p_loss_init, p_loss_length], t1, t2
         )
 
         stop_flag = [False]  # Mutable flag to signal stopping
-        AProtocol = SendProtocol(nodeA, stop_flag)
+        AProtocol = SendProtocol(nodeA, stop_flag, 2*distance/C)
         BProtocol = ReceiveProtocol(nodeB, stop_flag)
 
         AProtocol.start()
@@ -116,10 +123,10 @@ def setup_sim(
         arrival_time = BProtocol.arrival_time
 
         # Calculate fidelity with respect to ideal state
-        ideal_state = ns.qubits.ketstates.b00  # |00⟩ + |11> state
+        ideal_state = ns.b00  # |00⟩ + |11> state
         q1 = AProtocol.qubit 
         q2 = BProtocol.qubit
-        fidelity = ns.qubits.fidelity([q1, q2], ideal_state)
+        fidelity = ns.qubits.qubitapi.fidelity([q1, q2], ideal_state)
 
         results.append((simulation_end_time, total_qubits_sent, arrival_time, fidelity))
 
@@ -127,7 +134,7 @@ def setup_sim(
 
 if __name__ == "__main__":
     import sys
-    results = setup_sim(distance=int(sys.argv[1]), p_loss_init=0.5, shots=int(1e4), depolar_freq=1e5)
+    results = setup_sim(distance=int(sys.argv[1]), p_loss_init=0.5, shots=int(50), t1=0, t2=0)
     _, nTries, arrival_times, fidelities = zip(*results)
     avgTries = float(sum(nTries)) / len(nTries)
     print(f"Average tries = {avgTries}")

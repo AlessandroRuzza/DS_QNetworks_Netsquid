@@ -1,5 +1,6 @@
 from directComm import *
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 import re, os
 from pathlib import Path
@@ -31,42 +32,85 @@ def unique_and_probs(data):
 
     return unique_sorted, probs
 
-def plot_pmf_arrival_times(arrival_times:dict, title:str):
-    plt.figure(figsize=(10, 6))
-    for name, data in arrival_times.items():
+def plot_pmf_cdf_arrival_times_with_analytic(arrival_times: dict,
+                                             title: str,
+                                             p_ge_dict: dict | None = None,
+                                             max_distances: int | None = None):
+    
+    fig, (ax_pmf, ax_cdf) = plt.subplots(1, 2, figsize=(12, 5))
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+    for idx, (name, data) in enumerate(arrival_times.items()):
+        if max_distances is not None and idx >= max_distances:
+            break
+
         unique_sorted, probs = unique_and_probs(data)
-        x = np.array(unique_sorted, dtype=float)
-        y = np.array(probs, dtype=float)
-        plt.plot(x, y, label=name, linewidth=2, marker='o', linestyle='-')
+        x = np.asarray(unique_sorted, dtype=float)
+        y = np.asarray(probs, dtype=float)
+        color = colors[idx % len(colors)]
 
-    plt.xscale('log')
-    plt.xlabel("Arrival Time (#attempts)", fontsize=12)
-    plt.ylabel("Probability", fontsize=12)
-    plt.title(title, fontsize=14)
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3, which='both')
-    plt.tight_layout()
-    plt.savefig(get_img_path(title), dpi=300)
-    plt.show()
-    plt.close()
+        ax_pmf.plot(
+            x, y, marker="o", markersize=2, linestyle="-", linewidth=0.9,
+            color=color, label=name
+        )
+        cdf_sim = np.cumsum(y)
+        ax_cdf.plot(
+            x, cdf_sim, marker="o", markersize=2, linestyle="-", linewidth=0.9,
+            color=color
+        )
 
-def plot_cdf_arrival_times(arrival_times:dict, title):
-    plt.figure(figsize=(10, 6))
+        if p_ge_dict is not None and name in p_ge_dict:
+            p_ge = p_ge_dict[name]
+        else:
+            mean_attempts = np.mean(data)
+            if mean_attempts <= 0:
+                continue
+            p_ge = 1.0 / mean_attempts
 
-    for name, data in arrival_times.items():
-        unique_sorted, probs = unique_and_probs(data)
-        cumulative_probs = [sum(probs[:i+1]) for i in range(len(probs))]
-        plt.plot(unique_sorted, cumulative_probs, label=name,
-                 linewidth=2, marker='o')
+        t_vals = np.arange(1, int(x.max()) + 1)
+        pmf_analytic = p_ge * (1 - p_ge) ** (t_vals - 1)
+        cdf_analytic = 1 - (1 - p_ge) ** t_vals
 
-    plt.xscale('log')
-    plt.xlabel("Time (#attempts)", fontsize=12)
-    plt.ylabel("P(Arrival Time ≤ t)", fontsize=12)
-    plt.title(title, fontsize=14)
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.savefig(get_img_path(title), dpi=300)
+        ax_pmf.plot(
+            t_vals, pmf_analytic,
+            linestyle="--", linewidth=0.8, color=color
+        )
+        ax_cdf.plot(
+            t_vals, cdf_analytic,
+            linestyle="--", linewidth=0.8, color=color
+        )
+
+    for ax in (ax_pmf, ax_cdf):
+        ax.set_xscale("log")
+        ax.grid(True, alpha=0.25, which="both")
+        ax.tick_params(axis="both", labelsize=9)
+
+    ax_pmf.set_xlabel("# attempts", fontsize=11)
+    ax_pmf.set_ylabel("Probability", fontsize=11)
+    ax_pmf.set_title("PMF", fontsize=12, pad=6)
+
+    ax_cdf.set_xlabel("# attempts", fontsize=11)
+    ax_cdf.set_ylabel("Probability", fontsize=11)
+    ax_cdf.set_title("CDF", fontsize=12, pad=6)
+
+    ax_pmf.legend(
+        title="distance", fontsize=9, title_fontsize=9,
+        loc="upper right", frameon=False
+    )
+
+    sim_handle = Line2D([0], [0], color="black", linestyle="-", marker="o",
+                        markersize=2, linewidth=0.9, label="simulation")
+    ana_handle = Line2D([0], [0], color="black", linestyle="--",
+                        linewidth=0.8, label="analytic")
+    fig.legend(
+        handles=[sim_handle, ana_handle],
+        loc="lower center", ncol=2, fontsize=9, frameon=False,
+        bbox_to_anchor=(0.5, 0.03)
+    )
+    fig.suptitle(title, fontsize=14, y=0.97)
+    fig.tight_layout(rect=[0.03, 0.08, 1.0, 0.9])
+
+    plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
     plt.show()
     plt.close()
 
@@ -82,14 +126,7 @@ def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title):
         plt.plot(unique_times, unique_fids, label=name,
                  linewidth=2, marker='o')
 
-    plt.axhline(
-        y=0.9,
-        color="red",
-        linestyle="--",
-        linewidth=2,
-        label="Quality threshold (F=0.9)",
-    )
-    plt.xlabel("Arrival time (#attempts)", fontsize=12)
+    plt.xlabel("Number of attempts", fontsize=12)
     plt.ylabel("Fidelity", fontsize=12)
     plt.title(title, fontsize=14)
     plt.legend(fontsize=11)
@@ -100,46 +137,70 @@ def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title):
     plt.close()
 
 # Define different parameter sets to test
+# Define different parameter sets to test
+travel_ns_km = 1e9 / 2e5
 param_sets = [ 
     {
         "name": "Ideal case",
         "shots": 20,
-        "distances": [5, 10, 20, 50, 100, 200],
+        "distances": [5, 20, 50],
         "p_loss_init": 0.0,
         "p_loss_length": 0.0,
-        "depolar_freq": 0,
+        "t1": 0,
+        "t2": 0,
     },
     {
         "name": "High initial loss fibre",
         "shots": 1_000,
-        "distances": [5, 10, 20, 50, 100, 200],
+        "distances": [5, 20, 50],
         "p_loss_init": 0.9,
         "p_loss_length": 0.02,
-        "depolar_freq": 5_000,
+        "t1": 0,
+        "t2": 0,
     },
     {
         "name": "Zero length loss fibre",
         "shots": 200,
-        "distances": [5, 10, 20, 50, 100, 200],
+        "distances": [5, 20, 50],
         "p_loss_init": 0.5,
         "p_loss_length": 0.0,
-        "depolar_freq": 5_000,
+        "t1": 0,
+        "t2": 0,
     },
     {
         "name": "High length loss fibre",
-        "shots": 1000,
-        "distances": [5, 10, 20, 40],
+        "shots": 1_000,
+        "distances": [5, 20, 50],
         "p_loss_init": 0.0,
         "p_loss_length": 0.5,
-        "depolar_freq": 3_000,
+        "t1": 0,
+        "t2": 0,
+    },{
+        "name": "Low-Noise fibre (t1 = 500km travel time)",
+        "shots": 100,
+        "distances": [5, 20, 50],
+        "p_loss_init": 0.0,
+        "p_loss_length": 0.1,
+        "t1": travel_ns_km * 500,
+        "t2": travel_ns_km * 50,
     },
     {
-        "name": "Noise-dominated fibre",
+        "name": "High-Noise fibre (t1 = 50km travel time)",
         "shots": 100,
-        "distances": [5, 10, 20, 50, 100, 200],
-        "p_loss_init": 0.2,
-        "p_loss_length": 0.02,
-        "depolar_freq": 10_000,
+        "distances": [5, 20, 50],
+        "p_loss_init": 0.0,
+        "p_loss_length": 0.1,
+        "t1": travel_ns_km * 50,
+        "t2": travel_ns_km * 5,
+    },   
+    {
+        "name": "Extreme-Noise fibre (t1 = 5km travel time)",
+        "shots": 100,
+        "distances": [5, 20, 50],
+        "p_loss_init": 0.0,
+        "p_loss_length": 0.1,
+        "t1": travel_ns_km * 5,
+        "t2": travel_ns_km * 0.5,
     },
 ]
 
@@ -147,13 +208,21 @@ param_sets = [
 if __name__ == "__main__":
     all_results = {}
 
-    def label_param(params):
+    def label_loss(params):
         return  f"{params['name']} ({params['p_loss_init']} init, " + \
-                f"{params['p_loss_length']}dB/km, {params['depolar_freq']/1000}kHz)"
+                f"{params['p_loss_length']}dB/km)"
+
+    def label_noise(params):
+        return  f"{params['name']} ({params['depolar_freq']}Hz)"
+    
+    def label_full(params):
+        return  f"{params['name']} ({params['p_loss_init']} init, " + \
+                f"{params['p_loss_length']}dB/km, {params['depolar_freq']}Hz)"
+
 
     print("Running simulations with different parameters...")
     for i, params in enumerate(param_sets):
-        label = label_param(params)
+        label = label_full(params)
         all_results[label] = []
         results = []
         for dist in params["distances"]:
@@ -164,12 +233,15 @@ if __name__ == "__main__":
                 distance=dist,
                 p_loss_init=params["p_loss_init"],
                 p_loss_length=params["p_loss_length"],
-                depolar_freq=params["depolar_freq"],
+                t1=params["t1"],
+                t2=params["t2"],
             ))
 
         all_results[label] = {}
         for d in params["distances"]:
             all_results[label] = {
+                "label_loss": label_loss(params),
+                "label_noise": label_noise(params),
                 "sim_end_times": {},
                 "total_qubits_sent": {},
                 "arrival_times": {},
@@ -197,12 +269,11 @@ if __name__ == "__main__":
         # fidelity_stats(fidelities)
 
         # Plots (one figure per metric per set)
-        plot_pmf_arrival_times(
-            total_qubits_sent, title=f"PMF of arrival times\n{label}"
-        )
-        plot_cdf_arrival_times(
-            total_qubits_sent, title=f"CDF of arrival times\n{label}"
+        plot_pmf_cdf_arrival_times_with_analytic(
+            total_qubits_sent, 
+            title=f"PMF_CDF of arrival times\n{data["label_loss"]}"
         )
         plot_fidelity_distribution(
-            total_qubits_sent, fidelities, title=f"Fidelity distribution\n{label}"
+            total_qubits_sent, fidelities, 
+            title=f"Fidelity distribution\n{data["label_noise"]}"
         )
