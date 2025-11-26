@@ -108,7 +108,7 @@ def plot_pmf_cdf_arrival_times_with_analytic(arrival_times: dict,
         bbox_to_anchor=(0.5, 0.03)
     )
     fig.suptitle(title, fontsize=14, y=0.97)
-    fig.tight_layout(rect=[0.03, 0.08, 1.0, 0.9])
+    fig.tight_layout(rect=(0.03, 0.08, 1.0, 0.9))
 
     plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
     plt.show()
@@ -136,76 +136,10 @@ def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title):
     plt.show()
     plt.close()
 
-# Define different parameter sets to test
-# Define different parameter sets to test
-travel_ns_km = 1e9 / 2e5
-param_sets = [ 
-    {
-        "name": "Ideal case",
-        "shots": 20,
-        "distances": [5, 20, 50],
-        "p_loss_init": 0.0,
-        "p_loss_length": 0.0,
-        "t1": 0,
-        "t2": 0,
-    },
-    {
-        "name": "High initial loss fibre",
-        "shots": 1_000,
-        "distances": [5, 20, 50],
-        "p_loss_init": 0.9,
-        "p_loss_length": 0.02,
-        "t1": 0,
-        "t2": 0,
-    },
-    {
-        "name": "Zero length loss fibre",
-        "shots": 200,
-        "distances": [5, 20, 50],
-        "p_loss_init": 0.5,
-        "p_loss_length": 0.0,
-        "t1": 0,
-        "t2": 0,
-    },
-    {
-        "name": "High length loss fibre",
-        "shots": 1_000,
-        "distances": [5, 20, 50],
-        "p_loss_init": 0.0,
-        "p_loss_length": 0.5,
-        "t1": 0,
-        "t2": 0,
-    },{
-        "name": "Low-Noise fibre (t1 = 500km travel time)",
-        "shots": 100,
-        "distances": [5, 20, 50],
-        "p_loss_init": 0.0,
-        "p_loss_length": 0.1,
-        "t1": travel_ns_km * 500,
-        "t2": travel_ns_km * 50,
-    },
-    {
-        "name": "High-Noise fibre (t1 = 50km travel time)",
-        "shots": 100,
-        "distances": [5, 20, 50],
-        "p_loss_init": 0.0,
-        "p_loss_length": 0.1,
-        "t1": travel_ns_km * 50,
-        "t2": travel_ns_km * 5,
-    },   
-    {
-        "name": "Extreme-Noise fibre (t1 = 5km travel time)",
-        "shots": 100,
-        "distances": [5, 20, 50],
-        "p_loss_init": 0.0,
-        "p_loss_length": 0.1,
-        "t1": travel_ns_km * 5,
-        "t2": travel_ns_km * 0.5,
-    },
-]
+################## MULTIPLE SCENARIO PARAMETERS ##################################################
+from scenarios import *
 
-# Run simulations for all parameter sets
-if __name__ == "__main__":
+def run_sims():
     all_results = {}
 
     def label_loss(params):
@@ -253,7 +187,9 @@ if __name__ == "__main__":
             all_results[label]["fidelities"][f"{d}km"] = [res[3] for res in run]
             
     print("All simulations completed!")
+    return all_results
 
+def plot_sims(all_results):
     for label, data in all_results.items():
         print(f"\n=== {label} ===")
         sim_end_times = data["sim_end_times"]
@@ -276,3 +212,9 @@ if __name__ == "__main__":
             total_qubits_sent, fidelities, 
             title=f"Fidelity distribution\n{data["label_noise"]}"
         )
+
+
+# Run simulations for all parameter sets
+if __name__ == "__main__":
+    all_res = run_sims()
+    plot_sims(all_res)
