@@ -213,12 +213,11 @@ if __name__ == "__main__":
                 f"{params['p_loss_length']}dB/km)"
 
     def label_noise(params):
-        return  f"{params['name']} ({params['depolar_freq']}Hz)"
-    
+        return  f"{params['name']} (T1={params['t1']/1e3}us, T2={params['t2']/1e3}us)"
+
     def label_full(params):
         return  f"{params['name']} ({params['p_loss_init']} init, " + \
-                f"{params['p_loss_length']}dB/km, {params['depolar_freq']}Hz)"
-
+                f"{params['p_loss_length']}dB/km, T1={params['t1']/1e3}us, T2={params['t2']/1e3}us)"
 
     print("Running simulations with different parameters...")
     for i, params in enumerate(param_sets):
