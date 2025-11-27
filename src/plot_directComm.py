@@ -116,16 +116,24 @@ def plot_pmf_cdf_arrival_times_with_analytic(arrival_times: dict,
 
 ################## FIDELITY ##################################################
 
-def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title):
+
+def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title, expected=None):
     plt.figure(figsize=(10, 6))
-    for name, data in fidelities.items():
+    if expected is None: expected = {}
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    for idx, (name, data) in enumerate(fidelities.items()):
+        color = colors[idx % len(colors)]
         timed_fidelities = zip(arrival_times[name], data)
         sort = sorted(set(timed_fidelities), key=lambda f: f[0])
         unique_times = [t[0] for t in sort]
         unique_fids = [t[1] for t in sort]
         plt.plot(unique_times, unique_fids, label=name,
-                 linewidth=2, marker='o')
-
+                 linewidth=2, marker='o', color=color)
+        if name not in expected.keys():
+            expected[name] = np.mean(data)
+            print(f"{name} mean = {expected[name]}")
+        plt.axhline(expected[name], linestyle='--', label=f"{name} - analytical", color=color)
+        
     plt.xlabel("Number of attempts", fontsize=12)
     plt.ylabel("Fidelity", fontsize=12)
     plt.title(title, fontsize=14)

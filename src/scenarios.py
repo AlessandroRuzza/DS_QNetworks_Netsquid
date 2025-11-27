@@ -70,7 +70,7 @@ param_sets = [
         "shots": 1000,
         "distances": [5, 20, 50],
         "p_loss_init": 0.0,
-        "p_loss_length": 0.1,
+        "p_loss_length": 0.2,
         "t1": travel_ns_km * 5,
         "t2": travel_ns_km * 0.5,
     },
