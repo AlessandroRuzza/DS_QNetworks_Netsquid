@@ -10,26 +10,26 @@ def label_full(params):
             f"{params['p_loss_length']}dB/km, T1={params['t1']/1e3}us, T2={params['t2']/1e3}us)"
 
 # Define different parameter sets to test
-travel_ns_km = 1e9 / 2e5
+travel_ns_km = 1e9 / 2e5 # [ns/km] travel time
 param_sets = [ 
-    {
-        "name": "Ideal case",
-        "shots": 20,
-        "distances": [5, 20, 50],
-        "p_loss_init": 0.0,
-        "p_loss_length": 0.0,
-        "t1": 0,
-        "t2": 0,
-    },
-    {
-        "name": "High initial loss fibre",
-        "shots": 1_000,
-        "distances": [5, 20, 50],
-        "p_loss_init": 0.9,
-        "p_loss_length": 0.02,
-        "t1": 0,
-        "t2": 0,
-    },
+    # {
+    #     "name": "Ideal case",
+    #     "shots": 20,
+    #     "distances": [5, 20, 50],
+    #     "p_loss_init": 0.0,
+    #     "p_loss_length": 0.0,
+    #     "t1": 0,
+    #     "t2": 0,
+    # },
+    # {
+    #     "name": "Realistic fibre",
+    #     "shots": 1000,
+    #     "distances": [5, 20, 50],
+    #     "p_loss_init": 0.5,
+    #     "p_loss_length": 0.2,
+    #     "t1": travel_ns_km * 50,
+    #     "t2": travel_ns_km * 22,
+    # },
     {
         "name": "Zero length loss fibre",
         "shots": 200,

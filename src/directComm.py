@@ -31,7 +31,7 @@ def create_directConnected_nodes(distance: int, p: list[float], t1:float,t2:floa
 class SendProtocol(NodeProtocol):
     def __init__(self, node, stop_flag, timeout_us:float):
         """
-        timeout_us (float) : Retransmit timeout expressed in microseconds.
+        timeout_us (float) : Retransmit timeout expressed in nanoseconds.
         """
         super().__init__(node)
         self.qbitSent = 0
@@ -56,7 +56,7 @@ class SendProtocol(NodeProtocol):
             self.qubit = qubits[0]
 
             # Time in nanoseconds
-            yield self.await_timer(self.timeout)  # time in microseconds should be roughly 1 round trip
+            yield self.await_timer(self.timeout)  # time in nanoseconds should be roughly 1 round trip
 
 class ReceiveProtocol(NodeProtocol):
     def __init__(self, node, stop_flag):
@@ -110,7 +110,7 @@ def setup_sim(
         )
 
         stop_flag = [False]  # Mutable flag to signal stopping
-        AProtocol = SendProtocol(nodeA, stop_flag, 2*distance/C)
+        AProtocol = SendProtocol(nodeA, stop_flag, 2*distance/C) # Timeout = 1 round trip = 2*dist / C [ns]
         BProtocol = ReceiveProtocol(nodeB, stop_flag)
 
         AProtocol.start()
