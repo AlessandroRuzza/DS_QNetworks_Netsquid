@@ -131,8 +131,7 @@ def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title, expec
                  linewidth=2, marker='o', color=color)
         if name not in expected.keys():
             expected[name] = np.mean(data)
-            print(f"{name} mean = {expected[name]}")
-        plt.axhline(expected[name], linestyle='--', label=f"{name} - analytical", color=color)
+        plt.axhline(expected[name], linestyle='--', color=color)
         
     plt.xlabel("Number of attempts", fontsize=12)
     plt.ylabel("Fidelity", fontsize=12)
@@ -149,18 +148,6 @@ from scenarios import *
 
 def run_sims():
     all_results = {}
-
-    def label_loss(params):
-        return  f"{params['name']} ({params['p_loss_init']} init, " + \
-                f"{params['p_loss_length']}dB/km)"
-
-    def label_noise(params):
-        return  f"{params['name']} (T1={params['t1']/1e3}us, T2={params['t2']/1e3}us)"
-
-    def label_full(params):
-        return  f"{params['name']} ({params['p_loss_init']} init, " + \
-                f"{params['p_loss_length']}dB/km, T1={params['t1']/1e3}us, T2={params['t2']/1e3}us)"
-
     print("Running simulations with different parameters...")
     for i, params in enumerate(param_sets):
         label = label_full(params)
