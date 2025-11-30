@@ -7,7 +7,6 @@ import numpy as np
 from pathlib import Path
 import re
 
-
 def get_img_path(label: str):
     base = Path(__file__).resolve().parent.parent
     subfolder = re.sub(r"\s+", "_", label.splitlines()[0])

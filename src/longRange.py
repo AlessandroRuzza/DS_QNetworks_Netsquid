@@ -4,6 +4,7 @@ from netsquid.protocols import NodeProtocol
 from netsquid.components import QuantumChannel, Message
 from netsquid.components import FibreDelayModel, FibreLossModel, T1T2NoiseModel
 from netsquid.components.qmemory import QuantumMemory
+import netsquid.components.instructions as instr
 
 ns.set_qstate_formalism(ns.qubits.DenseDMRepr)
 
@@ -140,13 +141,7 @@ class RepeaterProtocol(NodeProtocol):
                 self.state["qC"] = self.state["C_qubits"][pair_id]
 
             if self.state["have_AB"] and self.state["have_BC"]:
-                qB_A = self.memB.peek(0)[0]
-                qB_C = self.memB.peek(1)[0]
-
-                ns.qubits.operate([qB_A, qB_C], ns.CNOT)
-                ns.qubits.operate([qB_A], ns.H)
-                m0, _ = ns.qubits.measure(qB_A, observable=ns.Z)
-                m1, _ = ns.qubits.measure(qB_C, observable=ns.Z)
+                m = instr.INSTR_MEASURE_BELL(self.memB, [0,1])[0] #type: ignore
 
                 f00 = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b00)
                 f01 = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b01)
@@ -155,8 +150,7 @@ class RepeaterProtocol(NodeProtocol):
                 F_AC = max(f00, f01, f10, f11)
 
                 self.state["F_AC"] = F_AC
-                self.state["m0"] = int(m0)
-                self.state["m1"] = int(m1)
+                self.state["m"] = m
                 self.state["swap_time"] = ns.sim_time(magnitude=ns.MICROSECOND)
                 self.state["success"] = True
                 self.state["done"] = True
@@ -197,8 +191,7 @@ def setup_longrange_sim(
             "F_AC": None,
             "swap_time": None,
             "success": False,
-            "m0": None,
-            "m1": None,
+            "m":None,
         }
 
         stop_AB = [False]
@@ -238,7 +231,8 @@ if __name__ == "__main__":
 
     distance = int(sys.argv[1])
     shots = int(sys.argv[2])
-
+    
+    travel_time = distance / FibreDelayModel.c #type: ignore
     results = setup_longrange_sim(
         shots=shots,
         distance=distance,
@@ -246,8 +240,8 @@ if __name__ == "__main__":
         p_loss_length=0.2,
         t1_channel=0.0,
         t2_channel=0.0,
-        T1_mem=0.0,
-        T2_mem=0.0,
+        T1_mem = travel_time/2,
+        T2_mem = travel_time/8,
     )
 
     _, attempts_AB, attempts_BC, attempts_total, swap_times, fidelities = zip(*results)
