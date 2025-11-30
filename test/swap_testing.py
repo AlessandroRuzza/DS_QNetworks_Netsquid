@@ -13,18 +13,20 @@ ns.set_qstate_formalism(ns.qubits.DenseDMRepr)
 
 class SwapSimulator():
     def __init__(self) -> None:
-        self.mem = QuantumMemory("memB", num_positions=2)
+        self.mem = QuantumMemory("mem", num_positions=4)
         noiseModel = T1T2NoiseModel(T1=500, T2=50)
         for mem_pos in self.mem.mem_positions:
             mem_pos.models['noise_model'] = noiseModel
         self.reset()
 
     def reset(self):
-        self.qA, qB_A = bell_pair()
-        self.qC, qB_C = bell_pair()
+        qA, qB_A = bell_pair()
+        qC, qB_C = bell_pair()
 
         self.mem.put(qB_A, positions=0)
         self.mem.put(qB_C, positions=1)
+        self.mem.put(qA, positions=2)
+        self.mem.put(qC, positions=3)
 
     @property
     def qB_A(self) -> Qubit:
@@ -33,14 +35,22 @@ class SwapSimulator():
     @property
     def qB_C(self) -> Qubit:
         return self.mem.peek(1)[0]
+    
+    @property
+    def qA(self) -> Qubit:
+        return self.mem.peek(2)[0]
+    
+    @property
+    def qC(self) -> Qubit:
+        return self.mem.peek(3)[0]
 
     def swap(self):
         return instr.INSTR_MEASURE_BELL(self.mem, [0,1])[0] #type:ignore
     
     def correct(self, m):
-        if m==1: ns.qubits.operate(self.qC, ns.X)
-        if m==2: ns.qubits.operate(self.qC, ns.Y)
-        if m==3: ns.qubits.operate(self.qC, ns.Z)
+        if m==1: instr.INSTR_X(self.mem, [3])
+        if m==2: instr.INSTR_Y(self.mem, [3]) # NOTE: bell measure = 2 means A~C == b11
+        if m==3: instr.INSTR_Z(self.mem, [3]) # NOTE: bell measure = 3 means A~C == b10
     
 def simulateSwap():
     swapSim = SwapSimulator()
