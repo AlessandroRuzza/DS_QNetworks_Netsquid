@@ -35,7 +35,12 @@ class SwapSimulator():
         return self.mem.peek(1)[0]
 
     def swap(self):
-        return instr.INSTR_MEASURE_BELL(self.mem, [0,1])
+        return instr.INSTR_MEASURE_BELL(self.mem, [0,1])[0] #type:ignore
+    
+    def correct(self, m):
+        if m==1: ns.qubits.operate(self.qC, ns.X)
+        if m==2: ns.qubits.operate(self.qC, ns.Y)
+        if m==3: ns.qubits.operate(self.qC, ns.Z)
     
 def simulateSwap():
     swapSim = SwapSimulator()
@@ -45,8 +50,11 @@ def simulateSwap():
     print("Fidelity of A~B: ", ns.qubits.fidelity([swapSim.qA, swapSim.qB_A], ns.b00))
     print("Fidelity of B~C: ", ns.qubits.fidelity([swapSim.qC, swapSim.qB_C], ns.b00))
 
-    print(swapSim.swap())
-    print("Fidelity of A~C: ", ns.qubits.fidelity([swapSim.qA, swapSim.qC], ns.b00))
+    m = swapSim.swap()
+    print(m)
+    print("Fidelity A~C: ", ns.qubits.fidelity([swapSim.qA, swapSim.qC], ns.b00))
+    swapSim.correct(m)
+    print("Corrected A~C: ", ns.qubits.fidelity([swapSim.qA, swapSim.qC], ns.b00))
 
 for _ in range(10):
     print("#"*15)
