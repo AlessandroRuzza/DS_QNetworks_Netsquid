@@ -133,7 +133,7 @@ def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title, expec
             expected[name] = np.mean(data)
         plt.axhline(expected[name], linestyle='--', color=color)
         
-    plt.xlabel("Number of attempts", fontsize=12)
+    plt.xlabel("Time units", fontsize=12)
     plt.ylabel("Fidelity", fontsize=12)
     plt.title(title, fontsize=14)
     plt.legend(fontsize=11)
