@@ -48,7 +48,7 @@ def create_repeater_nodes(
 
     loss_model = FibreLossModel(p_loss_init, p_loss_length)
     delay_model = FibreDelayModel()
-    noise_model = T1T2NoiseModel(t1_channel, t2_channel)
+    noise_model = T1T2NoiseModel(t1_channel, t2_channel) # type:ignore
 
     conn_AB = SymmetricConnection("AB_channel", distance, loss_model, delay_model, noise_model)
     conn_BC = SymmetricConnection("BC_channel", distance, loss_model, delay_model, noise_model)
@@ -59,7 +59,7 @@ def create_repeater_nodes(
                      local_port_name=portB_BC, remote_port_name=portC)
 
     memB = QuantumMemory("memB", num_positions=2)
-    mem_noise = T1T2NoiseModel(T1=T1_mem, T2=T2_mem)
+    mem_noise = T1T2NoiseModel(T1=T1_mem, T2=T2_mem) # type:ignore
     for mem_pos in memB.mem_positions:
         mem_pos.models["noise_model"] = mem_noise
 

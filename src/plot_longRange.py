@@ -1,6 +1,5 @@
 from longRange import setup_longrange_sim
 from scenarios import param_sets, label_loss, label_noise
-from collections import defaultdict
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import numpy as np
@@ -224,6 +223,7 @@ def plot_violin_fidelity_binned(attempts_dict, fidelities_dict, title, params:di
     fig.tight_layout(rect=(0.02, 0.05, 1.0, 0.95))
 
     # plt.show()
+    plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
 
 
 def run_longrange_sims():
