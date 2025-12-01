@@ -162,6 +162,80 @@ def plot_fidelity_vs_distance(fidelities_dict: dict, title: str):
     plt.close()
 
 
+from collections import defaultdict
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def plot_violin_fidelity_binned(attempts_dict, fidelities_dict, title):
+    keys = sorted(fidelities_dict.keys(), key=lambda k: float(k.replace("km", "")))
+    n = len(keys)
+    fig, axes = plt.subplots(1, n, figsize=(5 * n, 4), sharey=True)
+
+    if n == 1:
+        axes = [axes]
+
+    # Define bins for attempts (T)
+    bins = [
+        (1, 2),
+        (3, 4),
+        (5, 7),
+        (8, 12),
+        (13, 20),
+        (21, 40),
+        (41, 99999),
+    ]
+    bin_labels = [f"{lo}-{hi}" for (lo, hi) in bins]
+
+    for ax, key in zip(axes, keys):
+        attempts = attempts_dict[key]
+        fidelities = fidelities_dict[key]
+
+        # bucket data into bins
+        binned = [[] for _ in bins]
+        for a, f in zip(attempts, fidelities):
+            for i, (lo, hi) in enumerate(bins):
+                if lo <= a <= hi:
+                    binned[i].append(f)
+                    break
+
+        # keep only bins with enough samples
+        data = []
+        positions = []
+        for i, vals in enumerate(binned):
+            if len(vals) >= 5:
+                data.append(vals)
+                positions.append(i + 1)
+
+        parts = ax.violinplot(
+            data,
+            positions=positions,
+            showmeans=True,
+            showmedians=False,
+            showextrema=True,
+        )
+
+        for pc in parts["bodies"]:
+            pc.set_alpha(0.4)
+
+        # plot means
+        means = [np.mean(vals) for vals in data]
+        ax.plot(positions, means, marker="o", color="black", linewidth=1)
+
+        ax.set_xticks(positions)
+        ax.set_xticklabels([bin_labels[p - 1] for p in positions], rotation=30)
+        ax.set_xlabel("# attempts (A~C)", fontsize=10)
+        ax.set_title(key)
+
+        ax.grid(True, alpha=0.25)
+
+    axes[0].set_ylabel("Fidelity A~C")
+    fig.suptitle(title)
+    fig.tight_layout(rect=(0.02, 0.05, 1.0, 0.95))
+
+    plt.show()
+
+
 def plot_violin_fidelity_vs_attempts(
     attempts_dict: dict,
     fidelities_dict: dict,
@@ -210,7 +284,7 @@ def plot_violin_fidelity_vs_attempts(
             positions=Ts,
             showmeans=True,
             showmedians=False,
-            showextrema=False,
+            showextrema=True,
             widths=0.8,
         )
 
@@ -288,10 +362,16 @@ def plot_longrange(all_results):
         #     title=f"Fidelity A~C vs distance\n{data['label_noise']}",
         # )
 
-        plot_violin_fidelity_vs_attempts(
+        # plot_violin_fidelity_vs_attempts(
+        #     attempts_total,
+        #     fidelities,
+        #     title=f"Violin: fidelity vs attempts (A~C)\n{data['label_noise']}",
+        # )
+
+        plot_violin_fidelity_binned(
             attempts_total,
             fidelities,
-            title=f"Violin: fidelity vs attempts (A~C)\n{data['label_noise']}",
+            title=f"Fidelity of Long Range Entanglement (1 Repeater)\n{data['label_noise']}",
         )
 
 
