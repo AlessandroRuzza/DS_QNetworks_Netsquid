@@ -48,7 +48,7 @@ param_sets = [
         "t1": 0,
         "t2": 0,
     },{
-        "name": "Low-Noise fibre (t1 = 500km travel time)",
+        "name": "Low-Noise fibre (T1 = 500km travel time)",
         "shots": 1000,
         "distances": [5, 20, 50],
         "p_loss_init": 0.0,
@@ -57,7 +57,7 @@ param_sets = [
         "t2": travel_ns_km * 50,
     },
     {
-        "name": "High-Noise fibre (t1 = 50km travel time)",
+        "name": "High-Noise fibre (T1 = 50km travel time)",
         "shots": 1000,
         "distances": [5, 20, 50],
         "p_loss_init": 0.0,
@@ -66,7 +66,7 @@ param_sets = [
         "t2": travel_ns_km * 5,
     },   
     {
-        "name": "Extreme-Noise fibre (t1 = 5km travel time)",
+        "name": "Extreme-Noise fibre (T1 = 5km travel time)",
         "shots": 1000,
         "distances": [5, 20, 50],
         "p_loss_init": 0.0,
