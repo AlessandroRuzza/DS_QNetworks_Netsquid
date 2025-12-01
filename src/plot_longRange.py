@@ -69,8 +69,8 @@ def plot_pmf_cdf_attempts(attempts_dict: dict, title: str):
         p_ge = 1.0 / mean_attempts
 
         t_vals = np.arange(1, int(x.max()) + 1)
-        pmf_analytic = p_ge * (1 - p_ge) ** (t_vals - 1)
-        cdf_analytic = 1 - (1 - p_ge) ** t_vals
+        pmf_analytic = 2 * p_ge * (1 - p_ge) ** (t_vals - 1) * (1 - (1 - p_ge) ** t_vals) - (p_ge ** 2) * (1 - p_ge) ** (2 * (t_vals - 1))
+        cdf_analytic = (1 - (1 - p_ge) ** t_vals) ** 2
 
         ax_pmf.plot(t_vals, pmf_analytic, linestyle="--", linewidth=0.8, color=color)
         ax_cdf.plot(t_vals, cdf_analytic, linestyle="--", linewidth=0.8, color=color)
