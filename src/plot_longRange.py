@@ -7,7 +7,6 @@ import numpy as np
 from pathlib import Path
 import re
 
-
 def get_img_path(label: str):
     base = Path(__file__).resolve().parent.parent
     subfolder = re.sub(r"\s+", "_", label.splitlines()[0])
@@ -158,13 +157,7 @@ def plot_fidelity_vs_distance(fidelities_dict: dict, title: str):
     # plt.show()
     plt.close()
 
-
-from collections import defaultdict
-import numpy as np
-import matplotlib.pyplot as plt
-
-
-def plot_violin_fidelity_binned(attempts_dict, fidelities_dict, title):
+def plot_violin_fidelity_binned(attempts_dict, fidelities_dict, title, params:dict):
     keys = sorted(fidelities_dict.keys(), key=lambda k: float(k.replace("km", "")))
     n = len(keys)
     fig, axes = plt.subplots(1, n, figsize=(5 * n, 4), sharey=True)
@@ -180,7 +173,7 @@ def plot_violin_fidelity_binned(attempts_dict, fidelities_dict, title):
         (8, 12),
         (13, 20),
         (21, 40),
-        (41, 99999),
+        (41, 999),
     ]
     bin_labels = [f"{lo}-{hi}" for (lo, hi) in bins]
 
@@ -222,7 +215,7 @@ def plot_violin_fidelity_binned(attempts_dict, fidelities_dict, title):
         ax.set_xticks(positions)
         ax.set_xticklabels([bin_labels[p - 1] for p in positions], rotation=30)
         ax.set_xlabel("# attempts (A~C)", fontsize=10)
-        ax.set_title(key)
+        ax.set_title(key + f"p_ge = {params['p_ge'][key]:.3f}", fontsize=11)
 
         ax.grid(True, alpha=0.25)
 
@@ -230,7 +223,7 @@ def plot_violin_fidelity_binned(attempts_dict, fidelities_dict, title):
     fig.suptitle(title)
     fig.tight_layout(rect=(0.02, 0.05, 1.0, 0.95))
 
-    plt.show()
+    # plt.show()
 
 
 def run_longrange_sims():
@@ -294,6 +287,7 @@ def plot_longrange(all_results):
             attempts_total,
             fidelities,
             title=f"PMF_CDF of attempts (A~C)\n{data['label_loss']}",
+            params=data['params'], 
         )
         plot_fidelity_vs_distance(
             fidelities,
