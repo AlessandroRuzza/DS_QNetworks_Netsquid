@@ -32,7 +32,7 @@ def unique_and_probs(data):
     return unique_sorted, probs
 
 
-def plot_pmf_cdf_attempts(attempts_dict: dict, title: str, params:dict):
+def plot_pmf_cdf_attempts(attempts_dict: dict, title: str, params: dict):
     fig, (ax_pmf, ax_cdf) = plt.subplots(1, 2, figsize=(12, 5))
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
@@ -64,7 +64,7 @@ def plot_pmf_cdf_attempts(attempts_dict: dict, title: str, params:dict):
             color=color,
         )
 
-        p_ge = params['p_ge'][name]
+        p_ge = params["p_ge"][name]
 
         t_vals = np.arange(1, int(x.max()) + 1)
         pmf_analytic = 2 * p_ge * (1 - p_ge) ** (t_vals - 1) * (
@@ -233,80 +233,6 @@ def plot_violin_fidelity_binned(attempts_dict, fidelities_dict, title):
     plt.show()
 
 
-def plot_violin_fidelity_vs_attempts(
-    attempts_dict: dict,
-    fidelities_dict: dict,
-    title: str,
-    params: dict,
-    max_T: int = 50,
-    min_count: int = 5,
-):
-    """
-    For each distance (e.g. '5km', '20km', '50km') create a subplot with
-    violins over T = #attempts, showing the distribution of fidelities
-    of shots that finished at that T.
-
-    max_T: ignore attempts > max_T (tail is almost flat at 0.5 anyway)
-    min_count: require at least this many samples per T to draw a violin
-    """
-    keys = sorted(fidelities_dict.keys(), key=lambda k: float(k.replace("km", "")))
-    n = len(keys)
-
-    fig, axes = plt.subplots(1, n, figsize=(5 * n, 4), sharey=True)
-    if n == 1:
-        axes = [axes]
-
-    for ax, key in zip(axes, keys):
-        attempts = attempts_dict[key]
-        fidelities = fidelities_dict[key]
-
-        # bucket fidelities by attempt count
-        buckets = defaultdict(list)
-        for a, f in zip(attempts, fidelities):
-            if f is None:
-                continue
-            if a > max_T:
-                continue
-            buckets[int(a)].append(float(f))
-
-        # keep only T with enough data
-        Ts = sorted(t for t, vals in buckets.items() if len(vals) >= min_count)
-        if not Ts:
-            ax.set_title(f"{key} (no bins)")
-            continue
-
-        data = [buckets[t] for t in Ts]
-
-        parts = ax.violinplot(
-            data,
-            positions=Ts,
-            showmeans=True,
-            showmedians=False,
-            showextrema=True,
-            widths=0.8,
-        )
-
-        # make violins semi-transparent
-        for pc in parts["bodies"]:
-            pc.set_alpha(0.3)
-
-        # means as small markers for clarity
-        means = [np.mean(buckets[t]) for t in Ts]
-        ax.plot(Ts, means, marker="o", linestyle="-", linewidth=1.0)
-
-        ax.set_title(key + f"p_ge = {params['p_ge'][key]:.3f}", fontsize=11)
-        ax.set_xlabel("# attempts (A~C)", fontsize=10)
-        ax.grid(True, alpha=0.25)
-
-    axes[0].set_ylabel("Fidelity A~C", fontsize=11)
-    fig.suptitle(title, fontsize=14)
-    fig.tight_layout(rect=(0.02, 0.05, 1.0, 0.92))
-
-    plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
-    # plt.show()
-    plt.close()
-
-
 def run_longrange_sims():
     all_results = {}
     print("Running long-range simulations...")
@@ -324,7 +250,9 @@ def run_longrange_sims():
         }
 
         for dist in params["distances"]:
-            print(f"  Distance {dist} km, shots = {params['shots']}, p_ge = {params['p_ge'][f"{dist}km"]:.3f}")
+            print(
+                f"  Distance {dist} km, shots = {params['shots']}, p_ge = {params['p_ge'][f"{dist}km"]:.3f}"
+            )
             res = setup_longrange_sim(
                 shots=params["shots"],
                 distance=dist,
@@ -355,24 +283,17 @@ def plot_longrange(all_results):
         plot_pmf_cdf_attempts(
             attempts_total,
             title=f"PMF_CDF of attempts (A~C)\n{data['label_loss']}",
-            params=data['params'],
+            params=data["params"],
         )
         # plot_fidelity_vs_distance(
         #     fidelities,
         #     title=f"Fidelity A~C vs distance\n{data['label_noise']}",
         # )
 
-        # plot_violin_fidelity_vs_attempts(
-        #     attempts_total,
-        #     fidelities,
-        #     title=f"Violin: fidelity vs attempts (A~C)\n{data['label_noise']}",
-        # )
-
         plot_violin_fidelity_binned(
             attempts_total,
             fidelities,
             title=f"PMF_CDF of attempts (A~C)\n{data['label_loss']}",
-            params=data['params'],
         )
         plot_fidelity_vs_distance(
             fidelities,
