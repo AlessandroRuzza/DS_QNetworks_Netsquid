@@ -224,6 +224,7 @@ def plot_violin_fidelity_binned(attempts_dict, fidelities_dict, title, params:di
 
     # plt.show()
     plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
+    plt.close()
 
 
 def run_longrange_sims():
