@@ -4,6 +4,9 @@ from matplotlib.lines import Line2D
 import numpy as np
 import re, os
 from pathlib import Path
+from netsquid.components import QuantumMemory
+from netsquid.components.models.qerrormodels import T1T2NoiseModel
+
 
 ############## SUCCESS TIME ##################################################
 def get_img_path(label:str):
@@ -73,11 +76,11 @@ def plot_pmf_cdf_arrival_times_with_analytic(arrival_times: dict,
 
         ax_pmf.plot(
             t_vals, pmf_analytic,
-            linestyle="--", linewidth=0.8, color=color
+            linestyle="--", linewidth=1.2, color="black", zorder=10
         )
         ax_cdf.plot(
             t_vals, cdf_analytic,
-            linestyle="--", linewidth=0.8, color=color
+            linestyle="--", linewidth=1.2, color="black", zorder=10
         )
 
     for ax in (ax_pmf, ax_cdf):
@@ -201,11 +204,11 @@ def plot_sims(all_results):
         # Plots (one figure per metric per set)
         plot_pmf_cdf_arrival_times_with_analytic(
             total_qubits_sent, 
-            title=f"PMF_CDF of arrival times\n{data["label_loss"]}"
+            title=f"PMF_CDF of arrival times\n{data['label_noise']}"
         )
         plot_fidelity_distribution(
             total_qubits_sent, fidelities, 
-            title=f"Fidelity distribution\n{data["label_noise"]}"
+            title=f"Fidelity distribution\n{data['label_noise']}"
         )
 
 

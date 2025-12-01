@@ -3,6 +3,7 @@ from netsquid.nodes import DirectConnection, Node
 from netsquid.protocols import NodeProtocol
 from netsquid.components import FibreDelayModel, FibreLossModel, QuantumChannel, Message
 from netsquid.components import T1T2NoiseModel
+from netsquid.components import QuantumMemory
 ns.set_qstate_formalism(ns.qubits.DenseDMRepr)
 
 class SymmetricDirectConnection(DirectConnection):
@@ -21,9 +22,44 @@ def create_directConnected_nodes(distance: int, p: list[float], t1:float,t2:floa
     portName = "qubitIO"
     nodeA = Node("nodeA", port_names=[portName])
     nodeB = Node("nodeB", port_names=[portName])
-    conn = SymmetricDirectConnection("AB_channel", distance, 
-                                     FibreLossModel(p[0], p[1]), FibreDelayModel(), 
-                                     T1T2NoiseModel(t1,t2)) #type: ignore
+
+    # safety threshold -> netsquid cannot handle <=epsilon
+    MIN_T = 1e-9
+    MAX_T = 1e6
+
+    mem_noise = None
+    if t1 == 0 and t2 == 0: # if t1 = t2 = 0 -> no noise, 0km case -> what to do?
+        attach_noise = False
+    else:
+        attach_noise = (
+            t1 is not None and t2 is not None and MIN_T < t1 < MAX_T and MIN_T < t2 < MAX_T
+        )
+
+        # if values provided and not baseline, check physical constraint
+        if attach_noise:
+            # conversione?
+            # physical constraint: T2 <= 2*T1 (otherwise T2T1 model will give invalid rates)
+            assert t2 <= 2 * t1, f"Unphysical: must be T2 <= 2*T1 (got T1={t1}, T2={t2})"
+            mem_noise = T1T2NoiseModel(T1=t1, T2=t2) if attach_noise else None
+
+    # create memory
+    if mem_noise is not None:
+        memA = QuantumMemory("memA", num_positions=1, memory_noise_models=[mem_noise])
+        memB = QuantumMemory("memB", num_positions=1, memory_noise_models=[mem_noise])
+    else:
+        memA = QuantumMemory("memA", num_positions=1)
+        memB = QuantumMemory("memB", num_positions=1)
+
+    nodeA.add_subcomponent(memA)
+    nodeB.add_subcomponent(memB)
+
+    # Channel noise - not mem_noise here?
+    # for realistic fibre decoherence, replace `None` with noise model
+    conn = SymmetricDirectConnection("AB_channel", distance,
+        FibreLossModel(p[0], p[1]), FibreDelayModel(),
+        None)  # <-- no T1/T2 here; fibres do not use memory T1/T2 models
+        # mem_noise if attach_noise else None)
+
     nodeA.connect_to(remote_node=nodeB, connection=conn,
                         local_port_name=portName, remote_port_name=portName)
     return nodeA, nodeB
@@ -46,14 +82,21 @@ class SendProtocol(NodeProtocol):
 
     def run(self):
         port = self.node.ports["qubitIO"]
+        mem = self.node.subcomponents["memA"]
         while not self.stop_flag[0]:
             self.qbitSent += 1
             qubit_id = self.qbitSent
 
             qubits = self.produce_bell_pair()
+
+            # store q1
+            mem.put(qubits[0])
+
+            # keep pointer to the noisy memory version
+            self.qubit = mem.peek(0)[0]
             msg = Message(items=[qubits[1]], meta={"id": qubit_id})
             port.tx_output(msg)
-            self.qubit = qubits[0]
+            # self.qubit = qubits[0]
 
             # Time in nanoseconds
             yield self.await_timer(self.timeout)  # time in nanoseconds should be roughly 1 round trip
@@ -76,8 +119,16 @@ class ReceiveProtocol(NodeProtocol):
 
         # We received a qubit.
         msg = port.rx_input()
-        self.qubit = msg.items[0]
+        qubit = msg.items[0]
+        self.qubit = qubit
         self.received_id = msg.meta["meta"]["id"]
+
+        # store into memory -> enables T1/T2 noise
+        mem = self.node.subcomponents["memB"]
+        mem.put(qubit)
+
+        # overwrite local variable with memory content
+        self.qubit = mem.peek(0)[0]
         
 def setup_sim(
     shots,
@@ -102,6 +153,7 @@ def setup_sim(
     """
     results = []
     C = 2e5 / 1e9 # [km/ns] speed of light in fibre
+    memories = []  # list of (memA, memB) tuples, one per shot
     for _ in range(shots):
         ns.sim_reset()
 
@@ -130,7 +182,11 @@ def setup_sim(
 
         results.append((simulation_end_time, total_qubits_sent, arrival_time, fidelity))
 
-    return results
+        # store mem
+        memA = nodeA.subcomponents["memA"]
+        memB = nodeB.subcomponents["memB"]
+        memories.append((memA, memB))
+    return results, memories
 
 if __name__ == "__main__":
     import sys
