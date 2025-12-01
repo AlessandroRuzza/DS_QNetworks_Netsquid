@@ -78,11 +78,11 @@ def plot_pmf_cdf_attempts(attempts_dict: dict, title: str, params: dict):
         ax.grid(True, alpha=0.25, which="both")
         ax.tick_params(axis="both", labelsize=9)
 
-    ax_pmf.set_xlabel("# attempts (A~C)", fontsize=11)
+    ax_pmf.set_xlabel("Time units (A~C)", fontsize=11)
     ax_pmf.set_ylabel("Probability", fontsize=11)
     ax_pmf.set_title("PMF", fontsize=12, pad=6)
 
-    ax_cdf.set_xlabel("# attempts (A~C)", fontsize=11)
+    ax_cdf.set_xlabel("Time units (A~C)", fontsize=11)
     ax_cdf.set_ylabel("Probability", fontsize=11)
     ax_cdf.set_title("CDF", fontsize=12, pad=6)
 
@@ -213,8 +213,8 @@ def plot_violin_fidelity_binned(attempts_dict, fidelities_dict, title, params:di
 
         ax.set_xticks(positions)
         ax.set_xticklabels([bin_labels[p - 1] for p in positions], rotation=30)
-        ax.set_xlabel("# attempts (A~C)", fontsize=10)
-        ax.set_title(key + f"p_ge = {params['p_ge'][key]:.3f}", fontsize=11)
+        ax.set_xlabel("Time units (A~C)", fontsize=10)
+        ax.set_title(key, fontsize=11) # + f" (p_ge = {params['p_ge'][key]:.3f})"
 
         ax.grid(True, alpha=0.25)
 
@@ -286,7 +286,7 @@ def plot_longrange(all_results):
         plot_violin_fidelity_binned(
             attempts_total,
             fidelities,
-            title=f"PMF_CDF of attempts (A~C)\n{data['label_loss']}",
+            title=f"Violin PMF of attempts (A~C)\n{data['label_loss']}",
             params=data['params'], 
         )
         plot_fidelity_vs_distance(
