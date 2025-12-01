@@ -8,7 +8,6 @@ import netsquid.components.instructions as instr
 
 ns.set_qstate_formalism(ns.qubits.DenseDMRepr)
 
-
 class SymmetricConnection(DirectConnection):
     def __init__(self, name, L: int, loss_model, delay_model, noise_model) -> None:
         model_dict = {

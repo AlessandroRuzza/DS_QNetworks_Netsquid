@@ -85,11 +85,11 @@ def plot_pmf_cdf_arrival_times_with_analytic(arrival_times: dict,
         ax.grid(True, alpha=0.25, which="both")
         ax.tick_params(axis="both", labelsize=9)
 
-    ax_pmf.set_xlabel("# attempts", fontsize=11)
+    ax_pmf.set_xlabel("Time units", fontsize=11)
     ax_pmf.set_ylabel("Probability", fontsize=11)
     ax_pmf.set_title("PMF", fontsize=12, pad=6)
 
-    ax_cdf.set_xlabel("# attempts", fontsize=11)
+    ax_cdf.set_xlabel("Time units", fontsize=11)
     ax_cdf.set_ylabel("Probability", fontsize=11)
     ax_cdf.set_title("CDF", fontsize=12, pad=6)
 
