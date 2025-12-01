@@ -126,7 +126,7 @@ def plot_pmf_cdf_attempts(attempts_dict: dict, title: str, params:dict):
     fig.tight_layout(rect=(0.03, 0.08, 1.0, 0.9))
 
     plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
-    plt.show()
+    # plt.show()
     plt.close()
 
 
@@ -155,7 +155,7 @@ def plot_fidelity_vs_distance(fidelities_dict: dict, title: str):
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
-    plt.show()
+    # plt.show()
     plt.close()
 
 
@@ -163,6 +163,7 @@ def plot_violin_fidelity_vs_attempts(
     attempts_dict: dict,
     fidelities_dict: dict,
     title: str,
+    params: dict,
     max_T: int = 50,
     min_count: int = 5,
 ):
@@ -219,7 +220,7 @@ def plot_violin_fidelity_vs_attempts(
         means = [np.mean(buckets[t]) for t in Ts]
         ax.plot(Ts, means, marker="o", linestyle="-", linewidth=1.0)
 
-        ax.set_title(key, fontsize=11)
+        ax.set_title(key + f"p_ge = {params['p_ge'][key]:.3f}", fontsize=11)
         ax.set_xlabel("# attempts (A~C)", fontsize=10)
         ax.grid(True, alpha=0.25)
 
@@ -228,7 +229,7 @@ def plot_violin_fidelity_vs_attempts(
     fig.tight_layout(rect=(0.02, 0.05, 1.0, 0.92))
 
     plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
-    plt.show()
+    # plt.show()
     plt.close()
 
 
@@ -249,7 +250,7 @@ def run_longrange_sims():
         }
 
         for dist in params["distances"]:
-            print(f"  Distance {dist} km, shots = {params['shots']}")
+            print(f"  Distance {dist} km, shots = {params['shots']}, p_ge = {params['p_ge'][f"{dist}km"]:.3f}")
             res = setup_longrange_sim(
                 shots=params["shots"],
                 distance=dist,
@@ -287,11 +288,12 @@ def plot_longrange(all_results):
         #     title=f"Fidelity A~C vs distance\n{data['label_noise']}",
         # )
 
-        # plot_violin_fidelity_vs_attempts(
-        #     attempts_total,
-        #     fidelities,
-        #     title=f"PMF_CDF of attempts (A~C)\n{data['label_loss']}",
-        # )
+        plot_violin_fidelity_vs_attempts(
+            attempts_total,
+            fidelities,
+            title=f"PMF_CDF of attempts (A~C)\n{data['label_loss']}",
+            params=data['params'],
+        )
         plot_fidelity_vs_distance(
             fidelities,
             title=f"Violin: fidelity vs attempts (A~C)\n{data['label_noise']}",
