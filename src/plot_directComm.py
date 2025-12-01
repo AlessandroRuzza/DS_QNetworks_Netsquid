@@ -34,7 +34,7 @@ def unique_and_probs(data):
 
 def plot_pmf_cdf_arrival_times_with_analytic(arrival_times: dict,
                                              title: str,
-                                             p_ge_dict: dict | None = None,
+                                             params: dict | None = None,
                                              max_distances: int | None = None):
     
     fig, (ax_pmf, ax_cdf) = plt.subplots(1, 2, figsize=(12, 5))
@@ -59,8 +59,8 @@ def plot_pmf_cdf_arrival_times_with_analytic(arrival_times: dict,
             color=color
         )
 
-        if p_ge_dict is not None and name in p_ge_dict:
-            p_ge = p_ge_dict[name]
+        if params is not None:
+            p_ge = params['p_ge'][name]
         else:
             mean_attempts = np.mean(data)
             if mean_attempts <= 0:
@@ -174,6 +174,7 @@ def run_sims():
                 "total_qubits_sent": {},
                 "arrival_times": {},
                 "fidelities": {},
+                "params": params,
             }
         for d, run in zip(params["distances"], results):
             all_results[label]["sim_end_times"][f"{d}km"] = [res[0] for res in run]
@@ -202,12 +203,12 @@ def plot_sims(all_results):
         plot_pmf_cdf_arrival_times_with_analytic(
             total_qubits_sent, 
             title=f"PMF_CDF of arrival times\n{data["label_loss"]}"
+            params=data['params']
         )
         plot_fidelity_distribution(
             total_qubits_sent, fidelities, 
             title=f"Fidelity distribution\n{data["label_noise"]}"
         )
-
 
 # Run simulations for all parameter sets
 if __name__ == "__main__":
