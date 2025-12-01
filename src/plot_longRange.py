@@ -279,20 +279,12 @@ def plot_longrange(all_results):
             title=f"PMF_CDF of attempts (A~C)\n{data['label_loss']}",
             params=data["params"],
         )
-        # plot_fidelity_vs_distance(
-        #     fidelities,
-        #     title=f"Fidelity A~C vs distance\n{data['label_noise']}",
-        # )
 
         plot_violin_fidelity_binned(
             attempts_total,
             fidelities,
-            title=f"Violin PMF of attempts (A~C)\n{data['label_loss']}",
+            title=f"Fidelity of long-range attempts (A~C, 1 repeater)\n{data['label_loss']}",
             params=data['params'], 
-        )
-        plot_fidelity_vs_distance(
-            fidelities,
-            title=f"Fidelity of Long Range Entanglement (1 Repeater)\n{data['label_noise']}",
         )
 
 
