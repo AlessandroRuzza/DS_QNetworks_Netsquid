@@ -1,11 +1,12 @@
 from longRange import setup_longrange_sim
 from scenarios import param_sets, label_loss, label_noise
-
+from collections import defaultdict
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import numpy as np
 from pathlib import Path
 import re
+
 
 def get_img_path(label: str):
     base = Path(__file__).resolve().parent.parent
@@ -159,6 +160,125 @@ def plot_fidelity_vs_distance(fidelities_dict: dict, title: str):
     plt.close()
 
 
+def plot_fidelity_vs_attempts(attempts_dict: dict, fidelities_dict: dict, title: str):
+    fig, ax = plt.subplots(figsize=(7, 5))
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+    # loop over distances: "5km", "20km", ...
+    for idx, key in enumerate(
+        sorted(fidelities_dict.keys(), key=lambda k: float(k.replace("km", "")))
+    ):
+        attempts = attempts_dict[key]
+        fidelities = fidelities_dict[key]
+
+        # bucket fidelities by number of attempts T
+        buckets = defaultdict(list)
+        for a, f in zip(attempts, fidelities):
+            if f is None:
+                continue
+            buckets[a].append(f)
+
+        if not buckets:
+            continue
+
+        Ts = np.array(sorted(buckets.keys()), dtype=float)
+        mean = np.array([np.mean(buckets[t]) for t in Ts])
+        fmin = np.array([np.min(buckets[t]) for t in Ts])
+        fmax = np.array([np.max(buckets[t]) for t in Ts])
+
+        color = colors[idx % len(colors)]
+
+        # mean line
+        ax.plot(Ts, mean, marker="o", linewidth=1.2, label=key, color=color)
+
+        # optional shaded area for min/max (spread)
+        ax.fill_between(Ts, fmin, fmax, alpha=0.2, color=color)
+
+    ax.set_xlabel("# attempts to obtain A~C (≈ time T)", fontsize=12)
+    ax.set_ylabel("Average fidelity A~C", fontsize=12)
+    ax.set_title(title, fontsize=14)
+    ax.grid(True, alpha=0.3)
+    ax.legend(title="distance", fontsize=9, title_fontsize=9)
+    fig.tight_layout()
+
+    plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
+    plt.show()
+    plt.close()
+
+
+def plot_violin_fidelity_vs_attempts(
+    attempts_dict: dict,
+    fidelities_dict: dict,
+    title: str,
+    max_T: int = 50,
+    min_count: int = 5,
+):
+    """
+    For each distance (e.g. '5km', '20km', '50km') create a subplot with
+    violins over T = #attempts, showing the distribution of fidelities
+    of shots that finished at that T.
+
+    max_T: ignore attempts > max_T (tail is almost flat at 0.5 anyway)
+    min_count: require at least this many samples per T to draw a violin
+    """
+    keys = sorted(fidelities_dict.keys(), key=lambda k: float(k.replace("km", "")))
+    n = len(keys)
+
+    fig, axes = plt.subplots(1, n, figsize=(5 * n, 4), sharey=True)
+    if n == 1:
+        axes = [axes]
+
+    for ax, key in zip(axes, keys):
+        attempts = attempts_dict[key]
+        fidelities = fidelities_dict[key]
+
+        # bucket fidelities by attempt count
+        buckets = defaultdict(list)
+        for a, f in zip(attempts, fidelities):
+            if f is None:
+                continue
+            if a > max_T:
+                continue
+            buckets[int(a)].append(float(f))
+
+        # keep only T with enough data
+        Ts = sorted(t for t, vals in buckets.items() if len(vals) >= min_count)
+        if not Ts:
+            ax.set_title(f"{key} (no bins)")
+            continue
+
+        data = [buckets[t] for t in Ts]
+
+        parts = ax.violinplot(
+            data,
+            positions=Ts,
+            showmeans=True,
+            showmedians=False,
+            showextrema=False,
+            widths=0.8,
+        )
+
+        # make violins semi-transparent
+        for pc in parts["bodies"]:
+            pc.set_alpha(0.3)
+
+        # means as small markers for clarity
+        means = [np.mean(buckets[t]) for t in Ts]
+        ax.plot(Ts, means, marker="o", linestyle="-", linewidth=1.0)
+
+        ax.set_title(key, fontsize=11)
+        ax.set_xlabel("# attempts (A~C)", fontsize=10)
+        ax.grid(True, alpha=0.25)
+
+    axes[0].set_ylabel("Fidelity A~C", fontsize=11)
+    fig.suptitle(title, fontsize=14)
+    fig.tight_layout(rect=(0.02, 0.05, 1.0, 0.92))
+
+    plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
+    plt.show()
+    plt.close()
+
+
 def run_longrange_sims():
     all_results = {}
     print("Running long-range simulations...")
@@ -203,13 +323,24 @@ def plot_longrange(all_results):
         attempts_total = data["attempts_total"]
         fidelities = data["fidelities"]
 
-        plot_pmf_cdf_attempts(
+        # plot_pmf_cdf_attempts(
+        #     attempts_total,
+        #     title=f"PMF_CDF of attempts (A~C)\n{data['label_loss']}",
+        # )
+        # plot_fidelity_vs_distance(
+        #     fidelities,
+        #     title=f"Fidelity A~C vs distance\n{data['label_noise']}",
+        # )
+        # plot_fidelity_vs_attempts(
+        #     attempts_total,
+        #     fidelities,
+        #     title=f"Average fidelity vs attempts (A~C)\n{data['label_noise']}",
+        # )
+
+        plot_violin_fidelity_vs_attempts(
             attempts_total,
-            title=f"PMF_CDF of attempts (A~C)\n{data['label_loss']}",
-        )
-        plot_fidelity_vs_distance(
             fidelities,
-            title=f"Fidelity A~C vs distance\n{data['label_noise']}",
+            title=f"Violin: fidelity vs attempts (A~C)\n{data['label_noise']}",
         )
 
 
