@@ -70,7 +70,9 @@ def plot_pmf_cdf_attempts(attempts_dict: dict, title: str):
         p_ge = 1.0 / mean_attempts
 
         t_vals = np.arange(1, int(x.max()) + 1)
-        pmf_analytic = 2 * p_ge * (1 - p_ge) ** (t_vals - 1) * (1 - (1 - p_ge) ** t_vals) - (p_ge ** 2) * (1 - p_ge) ** (2 * (t_vals - 1))
+        pmf_analytic = 2 * p_ge * (1 - p_ge) ** (t_vals - 1) * (
+            1 - (1 - p_ge) ** t_vals
+        ) - (p_ge**2) * (1 - p_ge) ** (2 * (t_vals - 1))
         cdf_analytic = (1 - (1 - p_ge) ** t_vals) ** 2
 
         ax_pmf.plot(t_vals, pmf_analytic, linestyle="--", linewidth=0.8, color=color)
@@ -155,52 +157,6 @@ def plot_fidelity_vs_distance(fidelities_dict: dict, title: str):
     plt.title(title, fontsize=14)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
-    plt.show()
-    plt.close()
-
-
-def plot_fidelity_vs_attempts(attempts_dict: dict, fidelities_dict: dict, title: str):
-    fig, ax = plt.subplots(figsize=(7, 5))
-    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-
-    # loop over distances: "5km", "20km", ...
-    for idx, key in enumerate(
-        sorted(fidelities_dict.keys(), key=lambda k: float(k.replace("km", "")))
-    ):
-        attempts = attempts_dict[key]
-        fidelities = fidelities_dict[key]
-
-        # bucket fidelities by number of attempts T
-        buckets = defaultdict(list)
-        for a, f in zip(attempts, fidelities):
-            if f is None:
-                continue
-            buckets[a].append(f)
-
-        if not buckets:
-            continue
-
-        Ts = np.array(sorted(buckets.keys()), dtype=float)
-        mean = np.array([np.mean(buckets[t]) for t in Ts])
-        fmin = np.array([np.min(buckets[t]) for t in Ts])
-        fmax = np.array([np.max(buckets[t]) for t in Ts])
-
-        color = colors[idx % len(colors)]
-
-        # mean line
-        ax.plot(Ts, mean, marker="o", linewidth=1.2, label=key, color=color)
-
-        # optional shaded area for min/max (spread)
-        ax.fill_between(Ts, fmin, fmax, alpha=0.2, color=color)
-
-    ax.set_xlabel("# attempts to obtain A~C (≈ time T)", fontsize=12)
-    ax.set_ylabel("Average fidelity A~C", fontsize=12)
-    ax.set_title(title, fontsize=14)
-    ax.grid(True, alpha=0.3)
-    ax.legend(title="distance", fontsize=9, title_fontsize=9)
-    fig.tight_layout()
-
     plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
     plt.show()
     plt.close()
@@ -330,11 +286,6 @@ def plot_longrange(all_results):
         # plot_fidelity_vs_distance(
         #     fidelities,
         #     title=f"Fidelity A~C vs distance\n{data['label_noise']}",
-        # )
-        # plot_fidelity_vs_attempts(
-        #     attempts_total,
-        #     fidelities,
-        #     title=f"Average fidelity vs attempts (A~C)\n{data['label_noise']}",
         # )
 
         plot_violin_fidelity_vs_attempts(
