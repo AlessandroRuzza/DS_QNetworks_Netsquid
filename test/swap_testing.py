@@ -54,15 +54,24 @@ class SwapSimulator():
     
 def simulateSwap():
     swapSim = SwapSimulator()
-    ns.sim_run(duration=100)
+    ns.sim_run(duration=50)
 
     print("Time = ", ns.sim_time())
-    print("Fidelity of A~B: ", ns.qubits.fidelity([swapSim.qA, swapSim.qB_A], ns.b00))
-    print("Fidelity of B~C: ", ns.qubits.fidelity([swapSim.qC, swapSim.qB_C], ns.b00))
+    fid1 = ns.qubits.fidelity([swapSim.qA, swapSim.qB_A], ns.b00)
+    fid2 = ns.qubits.fidelity([swapSim.qC, swapSim.qB_C], ns.b00)
+    print("Fidelity of A~B: ", fid1)
+    print("Fidelity of B~C: ", fid2)
+
+    w1 = (4*fid1 - 1) / 3
+    w2 = (4*fid2 - 1) / 3
+
+    wFinal = w1*w2
+    fidFinal = fid1*fid2 + ((1-fid1)/3)**2 * 3
 
     m = swapSim.swap()
     print(m)
-    print("Fidelity A~C: ", ns.qubits.fidelity([swapSim.qA, swapSim.qC], ns.b00))
+    print("Expected fidelity = ", fidFinal)
+    # print("Fidelity A~C: ", ns.qubits.fidelity([swapSim.qA, swapSim.qC], ns.b00))
     swapSim.correct(m)
     print("Corrected A~C: ", ns.qubits.fidelity([swapSim.qA, swapSim.qC], ns.b00))
 

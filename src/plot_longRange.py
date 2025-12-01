@@ -32,7 +32,7 @@ def unique_and_probs(data):
     return unique_sorted, probs
 
 
-def plot_pmf_cdf_attempts(attempts_dict: dict, title: str):
+def plot_pmf_cdf_attempts(attempts_dict: dict, title: str, params:dict):
     fig, (ax_pmf, ax_cdf) = plt.subplots(1, 2, figsize=(12, 5))
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
@@ -64,10 +64,7 @@ def plot_pmf_cdf_attempts(attempts_dict: dict, title: str):
             color=color,
         )
 
-        mean_attempts = np.mean(data)
-        if mean_attempts <= 0:
-            continue
-        p_ge = 1.0 / mean_attempts
+        p_ge = params['p_ge'][name]
 
         t_vals = np.arange(1, int(x.max()) + 1)
         pmf_analytic = 2 * p_ge * (1 - p_ge) ** (t_vals - 1) * (
@@ -248,6 +245,7 @@ def run_longrange_sims():
             "label_noise": label_noise(params),
             "attempts_total": {},
             "fidelities": {},
+            "params": params,
         }
 
         for dist in params["distances"]:
@@ -279,17 +277,22 @@ def plot_longrange(all_results):
         attempts_total = data["attempts_total"]
         fidelities = data["fidelities"]
 
-        # plot_pmf_cdf_attempts(
-        #     attempts_total,
-        #     title=f"PMF_CDF of attempts (A~C)\n{data['label_loss']}",
-        # )
+        plot_pmf_cdf_attempts(
+            attempts_total,
+            title=f"PMF_CDF of attempts (A~C)\n{data['label_loss']}",
+            params=data['params'],
+        )
         # plot_fidelity_vs_distance(
         #     fidelities,
         #     title=f"Fidelity A~C vs distance\n{data['label_noise']}",
         # )
 
-        plot_violin_fidelity_vs_attempts(
-            attempts_total,
+        # plot_violin_fidelity_vs_attempts(
+        #     attempts_total,
+        #     fidelities,
+        #     title=f"PMF_CDF of attempts (A~C)\n{data['label_loss']}",
+        # )
+        plot_fidelity_vs_distance(
             fidelities,
             title=f"Violin: fidelity vs attempts (A~C)\n{data['label_noise']}",
         )

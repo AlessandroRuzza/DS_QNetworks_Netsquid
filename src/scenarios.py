@@ -75,3 +75,10 @@ param_sets = [
         "t2": travel_ns_km * 0.5,
     },
 ]
+
+import numpy as np
+for params in param_sets:
+    params['p_ge'] = {}
+    for dist in params["distances"]:
+        params['p_ge'][f"{dist}km"] = (1 - params['p_loss_init']) * np.power(10, -params['distance'] * params['p_loss_length'] / 10)
+
