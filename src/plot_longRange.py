@@ -2,9 +2,11 @@ from longRange import setup_longrange_sim
 from scenarios import param_sets, label_loss, label_noise
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from collections import defaultdict
 import numpy as np
 from pathlib import Path
 import re
+
 
 def get_img_path(label: str):
     base = Path(__file__).resolve().parent.parent
@@ -156,7 +158,8 @@ def plot_fidelity_vs_distance(fidelities_dict: dict, title: str):
     # plt.show()
     plt.close()
 
-def plot_violin_fidelity_binned(attempts_dict, fidelities_dict, title, params:dict):
+
+def plot_violin_fidelity_binned(attempts_dict, fidelities_dict, title, params: dict):
     keys = sorted(fidelities_dict.keys(), key=lambda k: float(k.replace("km", "")))
     n = len(keys)
     fig, axes = plt.subplots(1, n, figsize=(5 * n, 4), sharey=True)
@@ -214,7 +217,7 @@ def plot_violin_fidelity_binned(attempts_dict, fidelities_dict, title, params:di
         ax.set_xticks(positions)
         ax.set_xticklabels([bin_labels[p - 1] for p in positions], rotation=30)
         ax.set_xlabel("Time units", fontsize=10)
-        ax.set_title(key, fontsize=11) # + f" (p_ge = {params['p_ge'][key]:.3f})"
+        ax.set_title(key, fontsize=11)  # + f" (p_ge = {params['p_ge'][key]:.3f})"
 
         ax.grid(True, alpha=0.25)
 
@@ -224,6 +227,52 @@ def plot_violin_fidelity_binned(attempts_dict, fidelities_dict, title, params:di
 
     # plt.show()
     plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
+    plt.close()
+
+
+def plot_fidelity_vs_attempts(attempts_dict: dict, fidelities_dict: dict, title: str):
+    fig, ax = plt.subplots(figsize=(7, 5))
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+    # loop over distances: "5km", "20km", ...
+    for idx, key in enumerate(
+        sorted(fidelities_dict.keys(), key=lambda k: float(k.replace("km", "")))
+    ):
+        attempts = attempts_dict[key]
+        fidelities = fidelities_dict[key]
+
+        # bucket fidelities by number of attempts T
+        buckets = defaultdict(list)
+        for a, f in zip(attempts, fidelities):
+            if f is None:
+                continue
+            buckets[a].append(f)
+
+        if not buckets:
+            continue
+
+        Ts = np.array(sorted(buckets.keys()), dtype=float)
+        mean = np.array([np.mean(buckets[t]) for t in Ts])
+        fmin = np.array([np.min(buckets[t]) for t in Ts])
+        fmax = np.array([np.max(buckets[t]) for t in Ts])
+
+        color = colors[idx % len(colors)]
+
+        # mean line
+        ax.plot(Ts, mean, marker="o", linewidth=1.2, label=key, color=color)
+
+        # optional shaded area for min/max (spread)
+        ax.fill_between(Ts, fmin, fmax, alpha=0.2, color=color)
+
+    ax.set_xlabel("# attempts to obtain A~C (≈ time T)", fontsize=12)
+    ax.set_ylabel("Average fidelity A~C", fontsize=12)
+    ax.set_title(title, fontsize=14)
+    ax.grid(True, alpha=0.3)
+    ax.legend(title="distance", fontsize=9, title_fontsize=9)
+    fig.tight_layout()
+
+    plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
+    plt.show()
     plt.close()
 
 
@@ -271,7 +320,7 @@ def run_longrange_sims():
 
 def plot_longrange(all_results):
     for label, data in all_results.items():
-        print("#" * 5 +  label + "#"*5)
+        print("#" * 5 + label + "#" * 5)
         attempts_total = data["attempts_total"]
         fidelities = data["fidelities"]
 
@@ -285,7 +334,7 @@ def plot_longrange(all_results):
             attempts_total,
             fidelities,
             title=f"Fidelity of long-range attempts (A~C, 1 repeater)\n{data['label_loss']}",
-            params=data['params'], 
+            params=data["params"],
         )
 
 
