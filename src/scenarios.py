@@ -47,7 +47,8 @@ param_sets = [
         "p_loss_length": 0.5,
         "t1": 0,
         "t2": 0,
-    },{
+    },
+    {
         "name": "Low-Noise fibre (T1 = 500km travel time)",
         "shots": 1000,
         "distances": [5, 20, 50],

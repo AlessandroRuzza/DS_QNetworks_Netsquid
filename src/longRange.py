@@ -71,11 +71,10 @@ class SendShortLink(NodeProtocol):
     # part 1
 
     def __init__(self, node:Node, port_name: str, link_label: str,
-                 stop_flag: list[bool], state: dict, timeout_ns: float):
+                 state: dict, timeout_ns: float):
         super().__init__(node)
         self.port_name = port_name
         self.link_label = link_label
-        self.stop_flag = stop_flag
         self.state = state
         self.timeout = timeout_ns
         self.attempt_id = 0
@@ -83,17 +82,19 @@ class SendShortLink(NodeProtocol):
     @property
     def qmem(self):
         return self.node.qmemory
+    
+    def stop_flag(self) -> bool:
+        if self.link_label == "AB":
+            return self.state["have_AB"]
+        else:
+            return self.state["have_BC"]
 
     def run(self):
         port = self.node.ports[self.port_name]
-        while not self.stop_flag[0] and not self.state["done"]:
+        while not self.stop_flag() and not self.state["done"]:
             self.attempt_id += 1
             q1, q2 = bell_pair()
             self.qmem.put(q1, positions=[0])
-            if self.link_label == "AB":
-                self.state["A_qubits"][self.attempt_id] = self.qmem
-            else:
-                self.state["C_qubits"][self.attempt_id] = self.qmem
 
             msg = Message(items=[q2], meta={"link": self.link_label,
                                             "id": self.attempt_id})
@@ -106,11 +107,8 @@ class RepeaterProtocol(NodeProtocol):
     # part 2
 
     def __init__(self, node: QuantumMemory,
-                 stop_flag_AB: list[bool], stop_flag_BC: list[bool],
                  state: dict):
         super().__init__(node)
-        self.stop_flag_AB = stop_flag_AB
-        self.stop_flag_BC = stop_flag_BC
         self.state = state
 
     @property
@@ -133,7 +131,6 @@ class RepeaterProtocol(NodeProtocol):
         self.memB.put(q_from_A, positions=0)
         self.state["id_AB"] = pair_id
         self.state["have_AB"] = True
-        self.stop_flag_AB[0] = True
 
     def handle_recv_BC(self):
         msg = self.portBC.rx_input()
@@ -144,34 +141,33 @@ class RepeaterProtocol(NodeProtocol):
         self.memB.put(q_from_C, positions=1)
         self.state["id_BC"] = pair_id
         self.state["have_BC"] = True
-        self.stop_flag_BC[0] = True
 
     def run(self):
         while not self.state["done"]:
-            if not self.state["have_AB"]:
-                yield self.await_port_input(self.portAB)
-                self.handle_recv_AB()
+            while not self.state["have_AB"] or not self.state["have_BC"]:
+                expr = yield self.await_port_input(self.portAB) | self.await_port_input(self.portBC)      
 
-            if not self.state["have_BC"]:
-                yield self.await_port_input(self.portBC)
-                self.handle_recv_BC()
+                if expr.first_term.value:
+                    self.handle_recv_AB()
+                if expr.second_term.value:
+                    self.handle_recv_BC()
 
-            if self.state["have_AB"] and self.state["have_BC"]:
-                self.state["qA"] = self.state["A_qubits"][self.state["id_AB"]].peek(0)[0]
-                self.state["qC"] = self.state["C_qubits"][self.state["id_BC"]].peek(0)[0]
-                m = instr.INSTR_MEASURE_BELL(self.memB, [0,1])[0] #type: ignore
+            assert self.state["have_AB"] and self.state["have_BC"]
+            self.state["qA"] = self.state["A_mem"].peek(0)[0]
+            self.state["qC"] = self.state["C_mem"].peek(0)[0]
+            m = instr.INSTR_MEASURE_BELL(self.memB, [0,1])[0] #type: ignore
 
-                f00 = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b00)
-                f01 = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b01)
-                f10 = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b10)
-                f11 = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b11)
-                F_AC = max(f00, f01, f10, f11)
+            f00 = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b00)
+            f01 = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b01)
+            f10 = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b10)
+            f11 = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b11)
+            F_AC = max(f00, f01, f10, f11)
 
-                self.state["F_AC"] = F_AC
-                self.state["m"] = m
-                self.state["swap_time"] = ns.sim_time(magnitude=ns.MICROSECOND)
-                self.state["success"] = True
-                self.state["done"] = True
+            self.state["F_AC"] = F_AC
+            self.state["m"] = m
+            self.state["swap_time"] = ns.sim_time(magnitude=ns.MICROSECOND)
+            self.state["success"] = True
+            self.state["done"] = True
 
 
 def setup_longrange_sim(
@@ -200,8 +196,8 @@ def setup_longrange_sim(
             "done": False,
             "have_AB": False,
             "have_BC": False,
-            "A_qubits": {},
-            "C_qubits": {},
+            "A_mem": nodeA.qmemory,
+            "C_mem": nodeC.qmemory,
             "id_AB": None,
             "id_BC": None,
             "qA": None,
@@ -212,13 +208,11 @@ def setup_longrange_sim(
             "m":None,
         }
 
-        stop_AB = [False]
-        stop_BC = [False]
         timeout = 2 * distance / C  # ns
 
-        protoA = SendShortLink(nodeA, "portAB", "AB", stop_AB, state, timeout)
-        protoC = SendShortLink(nodeC, "portBC", "BC", stop_BC, state, timeout)
-        protoB = RepeaterProtocol(nodeB, stop_AB, stop_BC, state)
+        protoA = SendShortLink(nodeA, "portAB", "AB", state, timeout)
+        protoC = SendShortLink(nodeC, "portBC", "BC", state, timeout)
+        protoB = RepeaterProtocol(nodeB, state)
 
         protoA.start()
         protoB.start()
