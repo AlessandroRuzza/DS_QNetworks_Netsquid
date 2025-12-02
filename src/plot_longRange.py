@@ -288,10 +288,11 @@ def plot_violin_fidelity(
 
         # means as small markers for clarity
         means = [np.mean(buckets[t]) for t in Ts]
-        ax.plot(Ts, means, marker="o", linestyle="-", linewidth=1.0)
+        ax.plot(Ts, means, linestyle="-", linewidth=1.0)
 
         ax.set_title(key, fontsize=11)
         ax.set_xlabel("Time units (L/c)", fontsize=10)
+        ax.set_xticks(Ts)
         ax.grid(True, alpha=0.25)
 
     axes[0].set_ylabel("Fidelity A~C", fontsize=11)
@@ -360,6 +361,13 @@ def plot_longrange(all_results):
             attempts_total,
             fidelities,
             title=f"Fidelity of long-range attempts (A~C, 1 repeater)\n{data['label_loss']}",
+            params=data["params"],
+        )
+
+        plot_violin_fidelity_binned(
+            attempts_total,
+            fidelities,
+            title=f"Fidelity of long-range attempts (A~C, 1 repeater) (binned)\n{data['label_loss']}",
             params=data["params"],
         )
 
