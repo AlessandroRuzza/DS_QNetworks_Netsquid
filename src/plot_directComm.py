@@ -202,12 +202,12 @@ def plot_sims(all_results):
         # Plots (one figure per metric per set)
         plot_pmf_cdf_arrival_times_with_analytic(
             total_qubits_sent, 
-            title=f"PMF_CDF of arrival times\n{data["label_loss"]}"
-            params=data['params']
+            title=f"PMF_CDF of arrival times\n{data["label_loss"]}",
+            params=data['params'],
         )
         plot_fidelity_distribution(
             total_qubits_sent, fidelities, 
-            title=f"Fidelity distribution\n{data["label_noise"]}"
+            title=f"Fidelity distribution\n{data["label_noise"]}",
         )
 
 # Run simulations for all parameter sets

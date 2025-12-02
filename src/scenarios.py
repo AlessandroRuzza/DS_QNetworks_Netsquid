@@ -81,4 +81,4 @@ for params in param_sets:
     params['p_ge'] = {}
     for dist in params["distances"]:
         params['p_ge'][f"{dist}km"] = (1 - params['p_loss_init']) * np.power(10, -dist * params['p_loss_length'] / 10)
-
+        print(params['name'], f"p_ge = {params['p_ge'][f'{dist}km']}")

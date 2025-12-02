@@ -271,7 +271,7 @@ def run_longrange_sims():
 
 def plot_longrange(all_results):
     for label, data in all_results.items():
-        print("#" * 5 + label + "#"*5)
+        print("#" * 5 +  label + "#"*5)
         attempts_total = data["attempts_total"]
         fidelities = data["fidelities"]
 
