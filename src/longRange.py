@@ -73,13 +73,16 @@ class SendShortLink(NodeProtocol):
     def __init__(self, node:Node, port_name: str, link_label: str,
                  stop_flag: list[bool], state: dict, timeout_ns: float):
         super().__init__(node)
-        self.qmem = node.qmemory
         self.port_name = port_name
         self.link_label = link_label
         self.stop_flag = stop_flag
         self.state = state
         self.timeout = timeout_ns
         self.attempt_id = 0
+
+    @property
+    def qmem(self):
+        return self.node.qmemory
 
     def run(self):
         port = self.node.ports[self.port_name]
@@ -106,39 +109,52 @@ class RepeaterProtocol(NodeProtocol):
                  stop_flag_AB: list[bool], stop_flag_BC: list[bool],
                  state: dict):
         super().__init__(node)
-        self.memB = node.qmemory
         self.stop_flag_AB = stop_flag_AB
         self.stop_flag_BC = stop_flag_BC
         self.state = state
 
-    def run(self):
-        portAB = self.node.ports["portAB"]
-        portBC = self.node.ports["portBC"]
+    @property
+    def memB(self):
+        return self.node.qmemory
+    
+    @property
+    def portAB(self):
+        return self.node.ports["portAB"]
+    @property
+    def portBC(self):
+        return self.node.ports["portBC"]
 
+    def handle_recv_AB(self):
+        msg = self.portAB.rx_input()
+        meta = msg.meta["meta"]
+        q_from_A = msg.items[0]
+        pair_id = meta["id"]
+
+        self.memB.put(q_from_A, positions=0)
+        self.state["id_AB"] = pair_id
+        self.state["have_AB"] = True
+        self.stop_flag_AB[0] = True
+
+    def handle_recv_BC(self):
+        msg = self.portBC.rx_input()
+        meta = msg.meta["meta"]
+        q_from_C = msg.items[0]
+        pair_id = meta["id"]
+
+        self.memB.put(q_from_C, positions=1)
+        self.state["id_BC"] = pair_id
+        self.state["have_BC"] = True
+        self.stop_flag_BC[0] = True
+
+    def run(self):
         while not self.state["done"]:
             if not self.state["have_AB"]:
-                yield self.await_port_input(portAB)
-                msg = portAB.rx_input()
-                meta = msg.meta["meta"]
-                q_from_A = msg.items[0]
-                pair_id = meta["id"]
-
-                self.memB.put(q_from_A, positions=0)
-                self.state["id_AB"] = pair_id
-                self.state["have_AB"] = True
-                self.stop_flag_AB[0] = True
+                yield self.await_port_input(self.portAB)
+                self.handle_recv_AB()
 
             if not self.state["have_BC"]:
-                yield self.await_port_input(portBC)
-                msg = portBC.rx_input()
-                meta = msg.meta["meta"]
-                q_from_C = msg.items[0]
-                pair_id = meta["id"]
-
-                self.memB.put(q_from_C, positions=1)
-                self.state["id_BC"] = pair_id
-                self.state["have_BC"] = True
-                self.stop_flag_BC[0] = True
+                yield self.await_port_input(self.portBC)
+                self.handle_recv_BC()
 
             if self.state["have_AB"] and self.state["have_BC"]:
                 self.state["qA"] = self.state["A_qubits"][self.state["id_AB"]].peek(0)[0]
