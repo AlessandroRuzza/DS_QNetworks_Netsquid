@@ -26,8 +26,8 @@ def bell_pair():
     ns.qubits.operate([q1, q2], ns.CNOT)
     return q1, q2
 
-def make_lossy_mem(T1_mem, T2_mem):
-    mem = QuantumMemory("memB", num_positions=2)
+def make_lossy_mem(T1_mem, T2_mem, n=2):
+    mem = QuantumMemory("memB", num_positions=n)
     mem_noise = T1T2NoiseModel(T1=T1_mem, T2=T2_mem) # type:ignore
     for mem_pos in mem.mem_positions:
         mem_pos.models["noise_model"] = mem_noise
@@ -48,13 +48,9 @@ def create_repeater_nodes(
     portB_BC = "portBC"
     portC = "portBC"
 
-
-    memA = make_lossy_mem(T1_mem, T2_mem)
-    memC = make_lossy_mem(T1_mem, T2_mem)
-
-    nodeA = Node("nodeA", port_names=[portA])
-    nodeB = Node("nodeB", port_names=[portB_AB, portB_BC])
-    nodeC = Node("nodeC", port_names=[portC])
+    nodeA = Node("nodeA", port_names=[portA], qmemory=make_lossy_mem(T1_mem, T2_mem, 1))
+    nodeB = Node("nodeB", port_names=[portB_AB, portB_BC], qmemory=make_lossy_mem(T1_mem, T2_mem, 2))
+    nodeC = Node("nodeC", port_names=[portC], qmemory=make_lossy_mem(T1_mem, T2_mem, 1))
 
     loss_model = FibreLossModel(p_loss_init, p_loss_length)
     delay_model = FibreDelayModel()
@@ -68,18 +64,16 @@ def create_repeater_nodes(
     nodeB.connect_to(nodeC, connection=conn_BC,
                      local_port_name=portB_BC, remote_port_name=portC)
 
-    memB = make_lossy_mem(T1_mem, T2_mem)
-
-    return nodeA, nodeB, nodeC, memB, memA, memC
+    return nodeA, nodeB, nodeC
 
 
 class SendShortLink(NodeProtocol):
     # part 1
 
-    def __init__(self, node:Node, qmem, port_name: str, link_label: str,
+    def __init__(self, node:Node, port_name: str, link_label: str,
                  stop_flag: list[bool], state: dict, timeout_ns: float):
         super().__init__(node)
-        self.qmem = qmem
+        self.qmem = node.qmemory
         self.port_name = port_name
         self.link_label = link_label
         self.stop_flag = stop_flag
@@ -108,11 +102,11 @@ class SendShortLink(NodeProtocol):
 class RepeaterProtocol(NodeProtocol):
     # part 2
 
-    def __init__(self, node, memB: QuantumMemory,
+    def __init__(self, node: QuantumMemory,
                  stop_flag_AB: list[bool], stop_flag_BC: list[bool],
                  state: dict):
         super().__init__(node)
-        self.memB = memB
+        self.memB = node.qmemory
         self.stop_flag_AB = stop_flag_AB
         self.stop_flag_BC = stop_flag_BC
         self.state = state
@@ -180,7 +174,7 @@ def setup_longrange_sim(
     for _ in range(shots):
         ns.sim_reset()
 
-        nodeA, nodeB, nodeC, memB, memA, memC = create_repeater_nodes(
+        nodeA, nodeB, nodeC = create_repeater_nodes(
             distance, p_loss_init, p_loss_length,
             t1_channel, t2_channel,
             T1_mem, T2_mem,
@@ -206,9 +200,9 @@ def setup_longrange_sim(
         stop_BC = [False]
         timeout = 2 * distance / C  # ns
 
-        protoA = SendShortLink(nodeA, memA, "portAB", "AB", stop_AB, state, timeout)
-        protoC = SendShortLink(nodeC, memC, "portBC", "BC", stop_BC, state, timeout)
-        protoB = RepeaterProtocol(nodeB, memB, stop_AB, stop_BC, state)
+        protoA = SendShortLink(nodeA, "portAB", "AB", stop_AB, state, timeout)
+        protoC = SendShortLink(nodeC, "portBC", "BC", stop_BC, state, timeout)
+        protoB = RepeaterProtocol(nodeB, stop_AB, stop_BC, state)
 
         protoA.start()
         protoB.start()
