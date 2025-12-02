@@ -32,7 +32,7 @@ param_sets = [
     # },
     {
         "name": "Zero length loss fibre",
-        "shots": 200,
+        "shots": 2_000,
         "distances": [5, 20, 50],
         "p_loss_init": 0.5,
         "p_loss_length": 0.0,

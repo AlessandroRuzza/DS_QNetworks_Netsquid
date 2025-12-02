@@ -80,16 +80,16 @@ def plot_pmf_cdf_attempts(attempts_dict: dict, title: str, params: dict):
         ax.grid(True, alpha=0.25, which="both")
         ax.tick_params(axis="both", labelsize=9)
 
-    ax_pmf.set_xlabel("Time units", fontsize=11)
+    ax_pmf.set_xlabel("Time units (L/c)", fontsize=11)
     ax_pmf.set_ylabel("Probability", fontsize=11)
     ax_pmf.set_title("PMF", fontsize=12, pad=6)
 
-    ax_cdf.set_xlabel("Time units", fontsize=11)
+    ax_cdf.set_xlabel("Time units (L/c)", fontsize=11)
     ax_cdf.set_ylabel("Probability", fontsize=11)
     ax_cdf.set_title("CDF", fontsize=12, pad=6)
 
     ax_pmf.legend(
-        title="distance",
+        title="distance AB (L)",
         fontsize=9,
         title_fontsize=9,
         loc="upper right",
