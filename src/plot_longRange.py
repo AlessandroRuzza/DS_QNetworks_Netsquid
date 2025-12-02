@@ -254,8 +254,8 @@ def run_longrange_sims():
                 p_loss_length=params["p_loss_length"],
                 t1_channel=params["t1"],
                 t2_channel=params["t2"],
-                T1_mem=params["t1"],
-                T2_mem=params["t2"],
+                T1_mem=params["t1_mem"],
+                T2_mem=params["t2_mem"],
             )
 
             key = f"{dist}km"

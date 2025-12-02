@@ -49,7 +49,18 @@ param_sets = [
         "t2": 0,
     },
     {
-        "name": "Low-Noise fibre (T1 = 500km travel time)",
+        "name": "Low-Noise fibre (T1 = 500km travel time) (ideal memories)",
+        "shots": 1000,
+        "distances": [5, 20, 50],
+        "p_loss_init": 0.0,
+        "p_loss_length": 0.2,
+        "t1": travel_ns_km * 500,
+        "t2": travel_ns_km * 50,
+        "t1_mem": 0,
+        "t2_mem": 0,
+    },
+    {
+        "name": "Low-Noise fibre (T1 = 500km travel time) (noisy memories)",
         "shots": 1000,
         "distances": [5, 20, 50],
         "p_loss_init": 0.0,
@@ -82,4 +93,10 @@ for params in param_sets:
     params['p_ge'] = {}
     for dist in params["distances"]:
         params['p_ge'][f"{dist}km"] = (1 - params['p_loss_init']) * np.power(10, -dist * params['p_loss_length'] / 10)
-        print(params['name'], f"p_ge = {params['p_ge'][f'{dist}km']}")
+        print(params['name'], f"({dist}km)", f"p_ge = {params['p_ge'][f'{dist}km']}")
+
+    if params.get('t1_mem') is None:
+        params["t1_mem"] = params["t1"]
+    if params.get('t2_mem') is None:
+        params["t2_mem"] = params["t2"]
+
