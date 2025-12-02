@@ -78,11 +78,11 @@ def plot_pmf_cdf_attempts(attempts_dict: dict, title: str, params: dict):
         ax.grid(True, alpha=0.25, which="both")
         ax.tick_params(axis="both", labelsize=9)
 
-    ax_pmf.set_xlabel("Time units (A~C)", fontsize=11)
+    ax_pmf.set_xlabel("Time units", fontsize=11)
     ax_pmf.set_ylabel("Probability", fontsize=11)
     ax_pmf.set_title("PMF", fontsize=12, pad=6)
 
-    ax_cdf.set_xlabel("Time units (A~C)", fontsize=11)
+    ax_cdf.set_xlabel("Time units", fontsize=11)
     ax_cdf.set_ylabel("Probability", fontsize=11)
     ax_cdf.set_title("CDF", fontsize=12, pad=6)
 
@@ -213,12 +213,12 @@ def plot_violin_fidelity_binned(attempts_dict, fidelities_dict, title, params:di
 
         ax.set_xticks(positions)
         ax.set_xticklabels([bin_labels[p - 1] for p in positions], rotation=30)
-        ax.set_xlabel("Time units (A~C)", fontsize=10)
+        ax.set_xlabel("Time units", fontsize=10)
         ax.set_title(key, fontsize=11) # + f" (p_ge = {params['p_ge'][key]:.3f})"
 
         ax.grid(True, alpha=0.25)
 
-    axes[0].set_ylabel("Fidelity A~C")
+    axes[0].set_ylabel("Fidelity")
     fig.suptitle(title)
     fig.tight_layout(rect=(0.02, 0.05, 1.0, 0.95))
 
@@ -245,7 +245,7 @@ def run_longrange_sims():
 
         for dist in params["distances"]:
             print(
-                f"  Distance {dist} km, shots = {params['shots']}, p_ge = {params['p_ge'][f"{dist}km"]:.3f}"
+                f"  Distance {dist} km, shots = {params['shots']}, p_ge = {params['p_ge'][f'{dist}km']:.3f}"
             )
             res = setup_longrange_sim(
                 shots=params["shots"],
