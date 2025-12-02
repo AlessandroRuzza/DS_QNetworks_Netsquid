@@ -1,0 +1,9 @@
+# Core quantum networking simulation framework
+# Note: NetSquid requires special installation from private PyPI
+# Run: python -m pip install --extra-index-url https://username:password@pypi.netsquid.org netsquid
+netsquid>=1.1.8
+
+# Other libraries for plotting and data analysis
+numpy>=2.3
+scipy>=1.16.0
+matplotlib>=3.10.0

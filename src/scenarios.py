@@ -1,13 +1,13 @@
 def label_loss(params):
     return  f"{params['name']} ({params['p_loss_init']} init, " + \
-            f"{params['p_loss_length']}dB/km)"
+            f"{params['p_loss_length']}dB/km) ({params['shots']} shots)"
 
 def label_noise(params):
-    return  f"{params['name']} (T1={params['t1']/1e3}us, T2={params['t2']/1e3}us)"
+    return  f"{params['name']} (T1={params['t1']/1e3}us, T2={params['t2']/1e3}us) ({params['shots']} shots)"
 
 def label_full(params):
     return  f"{params['name']} ({params['p_loss_init']} init, " + \
-            f"{params['p_loss_length']}dB/km, T1={params['t1']/1e3}us, T2={params['t2']/1e3}us)"
+            f"{params['p_loss_length']}dB/km, T1={params['t1']/1e3}us, T2={params['t2']/1e3}us) ({params['shots']} shots)"
 
 # Define different parameter sets to test
 travel_ns_km = 1e9 / 2e5 # [ns/km] travel time

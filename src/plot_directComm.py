@@ -50,12 +50,12 @@ def plot_pmf_cdf_arrival_times_with_analytic(arrival_times: dict,
         color = colors[idx % len(colors)]
 
         ax_pmf.plot(
-            x, y, marker="o", markersize=2, linestyle="-", linewidth=0.9,
+            x, y, markersize=2, linestyle="-", linewidth=0.9,
             color=color, label=name
         )
         cdf_sim = np.cumsum(y)
         ax_cdf.plot(
-            x, cdf_sim, marker="o", markersize=2, linestyle="-", linewidth=0.9,
+            x, cdf_sim, markersize=2, linestyle="-", linewidth=0.9,
             color=color
         )
 
@@ -85,20 +85,20 @@ def plot_pmf_cdf_arrival_times_with_analytic(arrival_times: dict,
         ax.grid(True, alpha=0.25, which="both")
         ax.tick_params(axis="both", labelsize=9)
 
-    ax_pmf.set_xlabel("Time units", fontsize=11)
+    ax_pmf.set_xlabel("Time units (L/c)", fontsize=11)
     ax_pmf.set_ylabel("Probability", fontsize=11)
     ax_pmf.set_title("PMF", fontsize=12, pad=6)
 
-    ax_cdf.set_xlabel("Time units", fontsize=11)
+    ax_cdf.set_xlabel("Time units (L/c)", fontsize=11)
     ax_cdf.set_ylabel("Probability", fontsize=11)
     ax_cdf.set_title("CDF", fontsize=12, pad=6)
 
     ax_pmf.legend(
-        title="distance", fontsize=9, title_fontsize=9,
+        title="distance (L)", fontsize=9, title_fontsize=9,
         loc="upper right", frameon=False
     )
 
-    sim_handle = Line2D([0], [0], color="black", linestyle="-", marker="o",
+    sim_handle = Line2D([0], [0], color="black", linestyle="-",
                         markersize=2, linewidth=0.9, label="simulation")
     ana_handle = Line2D([0], [0], color="black", linestyle="--",
                         linewidth=0.8, label="analytic")
@@ -111,7 +111,7 @@ def plot_pmf_cdf_arrival_times_with_analytic(arrival_times: dict,
     fig.tight_layout(rect=(0.03, 0.08, 1.0, 0.9))
 
     plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
-    plt.show()
+    # plt.show()
     plt.close()
 
 ################## FIDELITY ##################################################
@@ -128,19 +128,19 @@ def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title, expec
         unique_times = [t[0] for t in sort]
         unique_fids = [t[1] for t in sort]
         plt.plot(unique_times, unique_fids, label=name,
-                 linewidth=2, marker='o', color=color)
+                 linewidth=2, color=color)
         if name not in expected.keys():
             expected[name] = np.mean(data)
         plt.axhline(expected[name], linestyle='--', color=color)
         
-    plt.xlabel("Time units", fontsize=12)
-    plt.ylabel("Fidelity", fontsize=12)
+    plt.xlabel("Time units (L/c)", fontsize=12)
+    plt.ylabel("Fidelity (A~B)", fontsize=12)
     plt.title(title, fontsize=14)
     plt.legend(fontsize=11)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(get_img_path(title), dpi=300)
-    plt.show()
+    # plt.show()
     plt.close()
 
 ################## MULTIPLE SCENARIO PARAMETERS ##################################################
@@ -151,10 +151,23 @@ def run_sims():
     print("Running simulations with different parameters...")
     for i, params in enumerate(param_sets):
         label = label_full(params)
-        all_results[label] = []
+        print(f"\n=== (Direct) Set {i+1}/{len(param_sets)}: {label} ===")
+
+        all_results[label] = {
+            "label_loss": label_loss(params),
+            "label_noise": label_noise(params),
+            "sim_end_times": {},
+            "total_qubits_sent": {},
+            "arrival_times": {},
+            "fidelities": {},
+            "params": params,
+        }
+
         results = []
         for dist in params["distances"]:
-            print(f"Running set {i+1}/{len(param_sets)}: {dist}km - {label}")
+            print(
+                f"  Distance {dist} km, shots = {params['shots']}, p_ge = {params['p_ge'][f'{dist}km']:.3f}"
+            )
 
             results.append(setup_sim(
                 shots=params["shots"],
@@ -164,18 +177,9 @@ def run_sims():
                 t1=params["t1"],
                 t2=params["t2"],
             ))
+            
+            key = f"{dist}km"
 
-        all_results[label] = {}
-        for d in params["distances"]:
-            all_results[label] = {
-                "label_loss": label_loss(params),
-                "label_noise": label_noise(params),
-                "sim_end_times": {},
-                "total_qubits_sent": {},
-                "arrival_times": {},
-                "fidelities": {},
-                "params": params,
-            }
         for d, run in zip(params["distances"], results):
             all_results[label]["sim_end_times"][f"{d}km"] = [res[0] for res in run]
             all_results[label]["total_qubits_sent"][f"{d}km"] = [res[1] for res in run]
@@ -202,12 +206,12 @@ def plot_sims(all_results):
         # Plots (one figure per metric per set)
         plot_pmf_cdf_arrival_times_with_analytic(
             total_qubits_sent, 
-            title=f"PMF_CDF of arrival times\n{data["label_loss"]}",
+            title=f"PMF_CDF of direct transmission A~B\n{data["label_loss"]}",
             params=data['params'],
         )
         plot_fidelity_distribution(
             total_qubits_sent, fidelities, 
-            title=f"Fidelity distribution\n{data["label_noise"]}",
+            title=f"Fidelity direct transmission A~B\n{data["label_noise"]}",
         )
 
 # Run simulations for all parameter sets
