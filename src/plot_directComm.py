@@ -157,7 +157,7 @@ def run_sims(param_sets:list[dict]):
             "label_loss": label_loss(params),
             "label_noise": label_noise(params),
             "sim_end_times": {},
-            "total_qubits_sent": {},
+            "attempts_total": {},
             "arrival_times": {},
             "fidelities": {},
             "params": params,
@@ -182,7 +182,7 @@ def run_sims(param_sets:list[dict]):
 
         for d, run in zip(params["distances"], results):
             all_results[label]["sim_end_times"][f"{d}km"] = [res[0] for res in run]
-            all_results[label]["total_qubits_sent"][f"{d}km"] = [res[1] for res in run]
+            all_results[label]["attempts_total"][f"{d}km"] = [res[1] for res in run]
             all_results[label]["arrival_times"][f"{d}km"] = [res[2] for res in run]
             all_results[label]["fidelities"][f"{d}km"] = [res[3] for res in run]
             
@@ -193,24 +193,24 @@ def plot_sims(all_results):
     for label, data in all_results.items():
         print(f"\n=== {label} ===")
         sim_end_times = data["sim_end_times"]
-        total_qubits_sent = data["total_qubits_sent"]
+        attempts_total = data["attempts_total"]
         arrival_times = data["arrival_times"]
         fidelities = data["fidelities"]
 
         # Print stats
         # sim_duration_stats(sim_end_times)
-        # qubits_stats(total_qubits_sent)
+        # qubits_stats(attempts_total)
         # arrival_times_stats(arrival_times)
         # fidelity_stats(fidelities)
 
         # Plots (one figure per metric per set)
         plot_pmf_cdf_arrival_times_with_analytic(
-            total_qubits_sent, 
+            attempts_total, 
             title=f"PMF_CDF of direct transmission A~B\n{data['label_loss']}",
             params=data['params'],
         )
         plot_fidelity_distribution(
-            total_qubits_sent, fidelities, 
+            attempts_total, fidelities, 
             title=f"Fidelity direct transmission A~B\n{data['label_noise']}",
         )
 

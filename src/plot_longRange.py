@@ -397,8 +397,6 @@ def plot_comparison(all_res_long, all_res_direct):
             print(f"{label_long} NOT found in direct results.")
             continue
 
-        assert False
-        
         data_long = all_res_long[label_long]
         data_direct = all_res_direct[label_direct]
         
