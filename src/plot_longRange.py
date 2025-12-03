@@ -405,7 +405,7 @@ def plot_comparison(all_res_long, all_res_direct):
             dist_km = int(dist_key_long.replace("km", ""))
             dist_key_direct = f"{int(dist_km * 2)}km"
             
-            if dist_key_direct not in data_direct["attempts_total"]:
+            if data_direct["attempts_total"].get(dist_key_direct) is None:
                 print(f"{dist_key_direct}km NOT found in data direct.")
                 continue
             
@@ -479,7 +479,7 @@ if __name__ == "__main__":
 
     param_direct = [p for p in param_sets]
     for p in param_direct:
-        p["distance"]=[2*d for d in p["distances"]]
+        p["distances"]=[2*d for d in p["distances"]]
     all_res_direct = direct.run_sims(param_direct)
 
     plot_comparison(all_res_long, all_res_direct)
