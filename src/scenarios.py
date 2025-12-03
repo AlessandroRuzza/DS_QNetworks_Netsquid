@@ -1,4 +1,5 @@
 from pathlib import Path
+import numpy as np
 import re
 
 def get_img_path(label: str):
@@ -113,15 +114,16 @@ param_sets = [
     },
 ]
 
-import numpy as np
-for params in param_sets:
-    params['p_ge'] = {}
-    for dist in params["distances"]:
-        params['p_ge'][f"{dist}km"] = (1 - params['p_loss_init']) * np.power(10, -dist * params['p_loss_length'] / 10)
-        print(params['name'], f"({dist}km)", f"p_ge = {params['p_ge'][f'{dist}km']}")
+def autofill_params(param_sets):
+    for params in param_sets:
+        params['p_ge'] = {}
+        for dist in params["distances"]:
+            params['p_ge'][f"{dist}km"] = (1 - params['p_loss_init']) * np.power(10, -dist * params['p_loss_length'] / 10)
+            print(params['name'], f"({dist}km)", f"p_ge = {params['p_ge'][f'{dist}km']}")
 
-    if params.get('t1_mem') is None:
-        params["t1_mem"] = params["t1"]
-    if params.get('t2_mem') is None:
-        params["t2_mem"] = params["t2"]
+        if params.get('t1_mem') is None:
+            params["t1_mem"] = params["t1"]
+        if params.get('t2_mem') is None:
+            params["t2_mem"] = params["t2"]
 
+autofill_params(param_sets)
