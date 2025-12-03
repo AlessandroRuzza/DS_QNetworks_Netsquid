@@ -284,7 +284,7 @@ def plot_violin_fidelity(
     # plt.show()
     plt.close()
 
-def run_longrange_sims():
+def run_longrange_sims(param_sets:list[dict]):
     all_results = {}
     print("Running long-range simulations...")
 
@@ -302,7 +302,7 @@ def run_longrange_sims():
 
         for dist in params["distances"]:
             print(
-                f"  Distance {dist} km, shots = {params['shots']}, p_ge = {params['p_ge'][f'{dist}km']:.3f}"
+                f"  Distance {dist} km, shots = {params['shots']}, p_ge = {params['p_ge'][f'{dist}km']:.5f}"
             )
             res = setup_longrange_sim(
                 shots=params["shots"],
@@ -353,5 +353,5 @@ def plot_longrange(all_results):
         )
 
 if __name__ == "__main__":
-    all_res_long = run_longrange_sims()
+    all_res_long = run_longrange_sims(param_sets)
     plot_longrange(all_res_long)

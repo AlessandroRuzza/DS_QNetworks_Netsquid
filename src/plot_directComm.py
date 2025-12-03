@@ -117,7 +117,7 @@ def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title, expec
     plt.close()
 
 ################## MULTIPLE SCENARIO PARAMETERS ##################################################
-def run_sims(param_sets:list[dict]):
+def run_sims(param_sets:list[dict], pge_skip_threshold=0.0):
     all_results = {}
     print("Running simulations with different parameters...")
     for i, params in enumerate(param_sets):
@@ -136,8 +136,13 @@ def run_sims(param_sets:list[dict]):
 
         results = []
         for dist in params["distances"]:
+            if params['p_ge'][f'{dist}km'] < pge_skip_threshold: 
+                print(
+                    f"  (SKIP) Distance {dist} km, shots = {params['shots']}, p_ge = {params['p_ge'][f'{dist}km']:.5f}"
+                )    
+                continue
             print(
-                f"  Distance {dist} km, shots = {params['shots']}, p_ge = {params['p_ge'][f'{dist}km']:.3f}"
+                f"  Distance {dist} km, shots = {params['shots']}, p_ge = {params['p_ge'][f'{dist}km']:.5f}"
             )
 
             results.append(setup_sim(

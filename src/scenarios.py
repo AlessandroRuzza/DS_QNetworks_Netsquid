@@ -114,7 +114,7 @@ param_sets = [
     },
 ]
 
-def autofill_params(param_sets):
+def autofill_params(param_sets:list[dict]):
     for params in param_sets:
         params['p_ge'] = {}
         for dist in params["distances"]:

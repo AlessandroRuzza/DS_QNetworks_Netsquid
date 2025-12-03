@@ -98,13 +98,14 @@ def plot_comparison(all_res_long, all_res_direct):
             plt.close()
 
 if __name__ == "__main__":
-    all_res_long = longRange.run_longrange_sims()
+    all_res_long = longRange.run_longrange_sims(param_sets)
 
-    param_direct = [p for p in param_sets]
+    import copy
+    param_direct = copy.deepcopy(param_sets)
     for p in param_direct:
         p["distances"] = [2*d for d in p["distances"]]
     autofill_params(param_direct)
-    
+
     all_res_direct = direct.run_sims(param_direct)
 
     plot_comparison(all_res_long, all_res_direct)
