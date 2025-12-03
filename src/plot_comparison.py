@@ -187,7 +187,7 @@ def print_comparison_table(all_res_long, all_res_direct):
     
     print("="*120 + "\n")
 
-if __name__ == "__main__":
+def run_comparison(param_sets:list[dict]):
     all_res_long = longRange.run_longrange_sims(param_sets)
 
     import copy
@@ -197,6 +197,10 @@ if __name__ == "__main__":
     autofill_params(param_direct)
 
     all_res_direct = direct.run_sims(param_direct)
+    
+    return all_res_long, all_res_direct
 
+if __name__ == "__main__":
+    all_res_long, all_res_direct = run_comparison(param_sets)
     plot_comparison(all_res_long, all_res_direct)
     print_comparison_table(all_res_long, all_res_direct)
