@@ -121,6 +121,72 @@ def plot_comparison(all_res_long, all_res_direct):
         plt.show()
         plt.close()
 
+def print_comparison_table(all_res_long, all_res_direct):
+    """
+    Print a comparison table of repeater vs direct communication.
+    Rows: scenario-distance pairs
+    Columns: avg time units, avg fidelity, p_gen for both methods
+    """
+    print("\n" + "="*120)
+    print("COMPARISON TABLE: Repeater vs Direct Communication")
+    print("="*120)
+    print(f"{'Scenario':<30} {'Distance':<12} {'Method':<20} {'Avg Time Units':<18} {'Avg Fidelity':<15} {'P_gen':<10}")
+    print("-"*120)
+    
+    for label_long in sorted(all_res_long.keys()):
+        # Find matching direct result
+        label_direct = None
+        for ld in all_res_direct.keys():
+            if label_long == ld:
+                label_direct = ld
+                break
+        
+        if label_direct is None:
+            continue
+        
+        data_long = all_res_long[label_long]
+        data_direct = all_res_direct[label_direct]
+        
+        # Get scenario name
+        scenario_name:str = data_long['params']['name']
+        
+        # Collect all distance keys
+        dist_keys_long = sorted(data_long["attempts_total"].keys(), 
+                                key=lambda x: int(x.replace("km", "")))
+        
+        for dist_key_long in dist_keys_long:
+            dist_km = int(dist_key_long.replace("km", ""))
+            dist_key_direct = f"{int(dist_km * 2)}km"
+            
+            if data_direct["attempts_total"].get(dist_key_direct) is None:
+                continue
+            
+            # Calculate statistics for repeater
+            attempts_long = data_long["attempts_total"][dist_key_long]
+            fidelities_long = [f for f in data_long["fidelities"][dist_key_long] if f is not None]
+            avg_time_long = np.mean(attempts_long) if len(attempts_long) > 0 else 0
+            avg_fid_long = np.mean(fidelities_long) if len(fidelities_long) > 0 else 0
+            p_gen_long = data_long["params"]["p_ge"].get(dist_key_long, 0)
+            
+            # Calculate statistics for direct
+            attempts_direct = data_direct["attempts_total"][dist_key_direct]
+            fidelities_direct = [f for f in data_direct["fidelities"][dist_key_direct] if f is not None]
+            avg_time_direct = np.mean(attempts_direct) if len(attempts_direct) > 0 else 0
+            avg_fid_direct = np.mean(fidelities_direct) if len(fidelities_direct) > 0 else 0
+            p_gen_direct = data_direct["params"]["p_ge"].get(dist_key_direct, 0)
+            
+            # Print repeater row
+            split = scenario_name.split('(')
+            if len(split)>=2: split.pop(1)
+            scenario_disp = "(".join(split).replace("memories", "mem")
+            print(f"{scenario_disp[:30]:<30} {dist_km*2:>4}km{'':<6} {'Repeater':<20} {avg_time_long:<18.2f} {avg_fid_long:<15.4f} {p_gen_long:<10.4f}")
+            
+            # Print direct row
+            print(f"{'':<30} {'':<12} {'Direct':<20} {avg_time_direct:<18.2f} {avg_fid_direct:<15.4f} {p_gen_direct:<10.4f}")
+            print("-"*120)
+    
+    print("="*120 + "\n")
+
 if __name__ == "__main__":
     all_res_long = longRange.run_longrange_sims(param_sets)
 
@@ -133,3 +199,4 @@ if __name__ == "__main__":
     all_res_direct = direct.run_sims(param_direct)
 
     plot_comparison(all_res_long, all_res_direct)
+    print_comparison_table(all_res_long, all_res_direct)
