@@ -1,5 +1,5 @@
 from longRange import setup_longrange_sim
-from scenarios import param_sets, label_loss, label_noise
+from scenarios import *
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from collections import defaultdict
@@ -316,7 +316,7 @@ def run_longrange_sims():
     print("Running long-range simulations...")
 
     for i, params in enumerate(param_sets):
-        label = label_loss(params)
+        label = label_full(params)
         print(f"\n=== (Long-range) Set {i+1}/{len(param_sets)}: {label} ===")
 
         all_results[label] = {
@@ -379,7 +379,6 @@ def plot_longrange(all_results):
             params=data["params"],
         )
 
-
 def plot_comparison(all_res_long, all_res_direct):
     """
     Compare repeater-based vs direct communication:
@@ -395,6 +394,7 @@ def plot_comparison(all_res_long, all_res_direct):
                 break
         
         if label_direct is None:
+            print(f"{label_long} NOT found in direct results.")
             continue
 
         assert False
@@ -404,10 +404,11 @@ def plot_comparison(all_res_long, all_res_direct):
         
         # For each distance pair (L vs 2L)
         for dist_key_long in data_long["attempts_total"].keys():
-            dist_km = float(dist_key_long.replace("km", ""))
+            dist_km = int(dist_key_long.replace("km", ""))
             dist_key_direct = f"{int(dist_km * 2)}km"
             
             if dist_key_direct not in data_direct["attempts_total"]:
+                print(f"{dist_key_direct}km NOT found in data direct.")
                 continue
             
             attempts_long = data_long["attempts_total"][dist_key_long]
@@ -457,7 +458,7 @@ def plot_comparison(all_res_long, all_res_direct):
                 positions=positions,
                 widths=0.6,
                 patch_artist=True,
-                labels=[f"Repeater\n({dist_km}km + {dist_km}km)", f"Direct\n({dist_km * 2}km)"]
+                label=[f"Repeater\n({dist_km}km + {dist_km}km)", f"Direct\n({dist_km * 2}km)"]
             )
             
             for patch, color in zip(bp['boxes'], ['C0', 'C1']):
