@@ -397,7 +397,7 @@ def plot_comparison(all_res_long, all_res_direct):
         if label_direct is None:
             continue
 
-        # assert False
+        assert False
         
         data_long = all_res_long[label_long]
         data_direct = all_res_direct[label_direct]
@@ -480,7 +480,7 @@ if __name__ == "__main__":
 
     param_direct = [p for p in param_sets]
     for p in param_direct:
-        p['distance'] *= 2
+        p["distance"]=[2*d for d in p["distances"]]
     all_res_direct = direct.run_sims(param_direct)
 
     plot_comparison(all_res_long, all_res_direct)

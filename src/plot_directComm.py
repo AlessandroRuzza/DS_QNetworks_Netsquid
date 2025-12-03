@@ -111,7 +111,7 @@ def plot_pmf_cdf_arrival_times_with_analytic(arrival_times: dict,
     fig.tight_layout(rect=(0.03, 0.08, 1.0, 0.9))
 
     plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
-    # plt.show()
+    plt.show()
     plt.close()
 
 ################## FIDELITY ##################################################
@@ -206,12 +206,12 @@ def plot_sims(all_results):
         # Plots (one figure per metric per set)
         plot_pmf_cdf_arrival_times_with_analytic(
             total_qubits_sent, 
-            title=f"PMF_CDF of direct transmission A~B\n{data["label_loss"]}",
+            title=f"PMF_CDF of direct transmission A~B\n{data['label_loss']}",
             params=data['params'],
         )
         plot_fidelity_distribution(
             total_qubits_sent, fidelities, 
-            title=f"Fidelity direct transmission A~B\n{data["label_noise"]}",
+            title=f"Fidelity direct transmission A~B\n{data['label_noise']}",
         )
 
 # Run simulations for all parameter sets
