@@ -146,7 +146,7 @@ def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title, expec
 ################## MULTIPLE SCENARIO PARAMETERS ##################################################
 from scenarios import *
 
-def run_sims():
+def run_sims(param_sets:list[dict]):
     all_results = {}
     print("Running simulations with different parameters...")
     for i, params in enumerate(param_sets):
@@ -216,5 +216,5 @@ def plot_sims(all_results):
 
 # Run simulations for all parameter sets
 if __name__ == "__main__":
-    all_res = run_sims()
+    all_res = run_sims(param_sets)
     plot_sims(all_res)
