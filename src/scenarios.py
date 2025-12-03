@@ -58,7 +58,7 @@ param_sets = [
     # },
     {
         "name": "Zero length loss fibre",
-        "shots": 2_000,
+        "shots": 2000,
         "distances": [5, 20, 50],
         "p_loss_init": 0.5,
         "p_loss_length": 0.0,
@@ -67,7 +67,7 @@ param_sets = [
     },
     {
         "name": "High length loss fibre",
-        "shots": 1_000,
+        "shots": 1000,
         "distances": [5, 20, 50],
         "p_loss_init": 0.0,
         "p_loss_length": 0.5,
@@ -127,3 +127,12 @@ def autofill_params(param_sets:list[dict]):
             params["t2_mem"] = params["t2"]
 
 autofill_params(param_sets)
+
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("-m", "--multiplyShotsBy", "--multiply", "--multiplyShots", type=float, default=1, help="Multiply shots by this factor")
+args = parser.parse_args()
+
+if args.multiplyShotsBy > 0:
+    for params in param_sets:
+        params["shots"] = round(params["shots"] * args.multiplyShotsBy)
