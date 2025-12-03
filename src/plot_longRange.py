@@ -251,7 +251,7 @@ def plot_violin_fidelity(
             positions=Ts,
             showmeans=True,
             showmedians=False,
-            showextrema=True,
+            showextrema=False,
             widths=0.8,
         )
 
@@ -348,7 +348,7 @@ def plot_longrange(all_results):
         plot_violin_fidelity_binned(
             attempts_total,
             fidelities,
-            title=f"Fidelity of long-range attempts (A~C, 1 repeater) (binned)\n{data['label_loss']}",
+            title=f"(binned) Fidelity of long-range attempts (A~C, 1 repeater)\n{data['label_loss']}",
             params=data["params"],
         )
 
