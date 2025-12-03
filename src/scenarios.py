@@ -1,3 +1,28 @@
+from pathlib import Path
+import re
+
+def get_img_path(label: str):
+    base = Path(__file__).resolve().parent.parent
+    subfolder = re.sub(r"\s+", "_", label.splitlines()[0])
+    outdir = base / "img" / subfolder
+    label = label.split(maxsplit=2)[0] + "_" + label.splitlines()[1]
+    outdir.mkdir(parents=True, exist_ok=True)
+    label = re.sub(r"\s+", "_", str(label)).strip()
+    label = re.sub(r"[^A-Za-z0-9._-]", "_", label)
+    label = re.sub(r"[()]", "", label)
+    label = label[:190] + ".png"
+    imgpath = outdir / label
+    return imgpath
+
+def unique_and_probs(data):
+    count_times = [(v, data.count(v)) for v in set(data)]
+    sorted_times = sorted(count_times)
+    unique_sorted = [v[0] for v in sorted_times]
+    counts_sorted = [v[1] for v in sorted_times]
+    total = sum(counts_sorted)
+    probs = [c / total for c in counts_sorted] if total > 0 else counts_sorted
+    return unique_sorted, probs
+
 def label_loss(params):
     return  f"{params['name']} ({params['p_loss_init']} init, " + \
             f"{params['p_loss_length']}dB/km) ({params['shots']} shots)"

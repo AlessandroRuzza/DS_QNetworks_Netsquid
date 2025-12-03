@@ -1,36 +1,10 @@
 from directComm import *
+from scenarios import *
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import numpy as np
-import re, os
-from pathlib import Path
 
-############## SUCCESS TIME ##################################################
-def get_img_path(label:str):
-    # resolve output directory relative to this file (avoid changing cwd)
-    base = Path(__file__).resolve().parent.parent  # repo root
-    subfolder = re.sub(r'\s+', '_', label.splitlines()[0])
-    outdir = base / "img" / subfolder
-    label = label.split(maxsplit=2)[0] + "_" + label.splitlines()[1]
-    outdir.mkdir(parents=True, exist_ok=True)
-    label = re.sub(r'\s+', '_', str(label)).strip()          # collapse whitespace/newlines
-    label = re.sub(r'[^A-Za-z0-9._-]', '_', label)           # keep a safe subset of chars
-    label = re.sub(r'[()]', '', label)
-    label = label[:190] + ".png"
-    imgpath = outdir / label
-    return imgpath 
-
-def unique_and_probs(data):
-    count_times = [(v, data.count(v)) for v in set(data)]
-    sorted_times = sorted(count_times)
-    
-    unique_sorted = [v[0] for v in sorted_times] 
-    counts_sorted = [v[1] for v in sorted_times]
-    # normalize counts to probabilities
-    total = sum(counts_sorted)
-    probs = [c / total for c in counts_sorted] if total > 0 else counts_sorted
-
-    return unique_sorted, probs
+################## PMF, CDF PLOTS ##################################################
 
 def plot_pmf_cdf_arrival_times_with_analytic(arrival_times: dict,
                                              title: str,
@@ -114,8 +88,7 @@ def plot_pmf_cdf_arrival_times_with_analytic(arrival_times: dict,
     plt.show()
     plt.close()
 
-################## FIDELITY ##################################################
-
+################## FIDELITY PLOT ##################################################
 
 def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title, expected=None):
     plt.figure(figsize=(10, 6))
@@ -144,8 +117,6 @@ def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title, expec
     plt.close()
 
 ################## MULTIPLE SCENARIO PARAMETERS ##################################################
-from scenarios import *
-
 def run_sims(param_sets:list[dict]):
     all_results = {}
     print("Running simulations with different parameters...")
