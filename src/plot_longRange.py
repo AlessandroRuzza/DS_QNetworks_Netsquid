@@ -379,6 +379,22 @@ def plot_longrange(all_results):
             params=data["params"],
         )
 
+
+def plot_comparison(L, shots=50):
+    fidelities_rep, fidelities_dir = run_comparison(L, shots)
+
+    plt.figure(figsize=(7, 5))
+    plt.boxplot(
+        [fidelities_rep, fidelities_dir],
+        labels=["Repeater (L + L)", "Direct (2L)"],
+    )
+    plt.ylabel("Bell Fidelity A~C")
+    plt.title(f"Long-range repeater vs Direct (distance L={L} km)")
+    plt.grid(True)
+    plt.savefig("comparison_plot.png")
+    plt.show()
+
 if __name__ == "__main__":
     all_res = run_longrange_sims()
     plot_longrange(all_res)
+    plot_comparison(L=20, shots=50)
