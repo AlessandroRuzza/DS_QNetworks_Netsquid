@@ -26,22 +26,39 @@ def plot_comparison(all_res_long, all_res_direct):
         data_long = all_res_long[label_long]
         data_direct = all_res_direct[label_direct]
         
-        # For each distance pair (L vs 2L)
-        for dist_key_long in data_long["attempts_total"].keys():
+        # Collect all distance keys
+        dist_keys_long = sorted(data_long["attempts_total"].keys(), 
+                                key=lambda x: int(x.replace("km", "")))
+        
+        # Filter valid distance pairs
+        valid_distances = []
+        for dist_key_long in dist_keys_long:
             dist_km = int(dist_key_long.replace("km", ""))
             dist_key_direct = f"{int(dist_km * 2)}km"
             
             if data_direct["attempts_total"].get(dist_key_direct) is None:
-                print(f"{dist_key_direct} NOT found in data direct.")
+                print(f"{dist_key_direct} NOT found in direct results for {data_long['params']['name']}.")
                 continue
             
+            valid_distances.append((dist_key_long, dist_key_direct, dist_km))
+        
+        if not valid_distances:
+            print(f"No valid distance pairs found for {label_long}")
+            continue
+        
+        num_distances = len(valid_distances)
+        
+        # Create PMF/CDF comparison plot with subplots for each distance
+        fig_pmf_cdf, axes = plt.subplots(2, num_distances, figsize=(6 * num_distances, 10), sharey=True)
+        if num_distances == 1:
+            axes = axes.reshape(-1, 1)
+        
+        for idx, (dist_key_long, dist_key_direct, dist_km) in enumerate(valid_distances):
             attempts_long = data_long["attempts_total"][dist_key_long]
             attempts_direct = data_direct["attempts_total"][dist_key_direct]
-            fidelities_long = data_long["fidelities"][dist_key_long]
-            fidelities_direct = data_direct["fidelities"][dist_key_direct]
             
-            # Plot PMF/CDF comparison
-            fig, (ax_pmf, ax_cdf) = plt.subplots(1, 2, figsize=(12, 5))
+            ax_pmf = axes[0, idx]
+            ax_cdf = axes[1, idx]
             
             for attempts, name, color in [
                 (attempts_long, f"Repeater ({dist_km}km + {dist_km}km)", "C0"),
@@ -58,44 +75,51 @@ def plot_comparison(all_res_long, all_res_direct):
             for ax in (ax_pmf, ax_cdf):
                 ax.set_xscale("log")
                 ax.set_xlabel("Time units (L/c)", fontsize=11)
-                ax.set_ylabel("Probability", fontsize=11)
                 ax.grid(True, alpha=0.25, which="both")
                 ax.legend(fontsize=9, frameon=False)
             
-            ax_pmf.set_title("PMF", fontsize=12)
-            ax_cdf.set_title("CDF", fontsize=12)
+            ax_pmf.set_title(f"PMF - {dist_km * 2}km", fontsize=12)
+            ax_cdf.set_title(f"CDF - {dist_km * 2}km", fontsize=12)
+        
+        axes[0,0].set_ylabel("Probability", fontsize=11)
+        axes[1,0].set_ylabel("Probability", fontsize=11)
+        fig_pmf_cdf.suptitle(f"Repeater vs Direct Communication - PMF/CDF\n{data_long['label_loss']}", fontsize=14)
+        fig_pmf_cdf.tight_layout(rect=(0.02, 0.02, 1.0, 0.96))
+        plt.savefig(get_img_path(f"Comparison_PMF_CDF\n{data_long['label_loss']}"), dpi=300, bbox_inches="tight")
+        plt.close()
+        
+        # Create fidelity comparison plot with subplots for each distance
+        fig_fid, axes_fid = plt.subplots(1, num_distances, figsize=(6 * num_distances, 5), sharey=True)
+        if num_distances == 1:
+            axes_fid = [axes_fid]
+        
+        for idx, (dist_key_long, dist_key_direct, dist_km) in enumerate(valid_distances):
+            fidelities_long = data_long["fidelities"][dist_key_long]
+            fidelities_direct = data_direct["fidelities"][dist_key_direct]
             
-            fig.suptitle(f"Repeater vs Direct Communication\n{data_long['label_loss']}", fontsize=14)
-            fig.tight_layout(rect=(0.02, 0.02, 1.0, 0.95))
-            plt.savefig(get_img_path(f"Comparison_PMF_CDF {dist_km}km\n{data_long['label_loss']}"), dpi=300, bbox_inches="tight")
-            plt.close()
-            
-            # Plot fidelity comparison
-            fig, ax = plt.subplots(figsize=(8, 5))
+            ax = axes_fid[idx]
             
             fid_long_clean = [f for f in fidelities_long if f is not None]
             fid_direct_clean = [f for f in fidelities_direct if f is not None]
             
             positions = [1, 2]
-            bp = ax.boxplot(
+            ax.violinplot(
                 [fid_long_clean, fid_direct_clean],
                 positions=positions,
-                widths=0.6,
-                patch_artist=True,
-                label=[f"Repeater\n({dist_km}km + {dist_km}km)", f"Direct\n({dist_km * 2}km)"]
+                widths=0.8,
+                showmeans=True,
+                showextrema=False,
             )
-            
-            for patch, color in zip(bp['boxes'], ['C0', 'C1']):
-                patch.set_facecolor(color)
-                patch.set_alpha(0.6)
-            
-            ax.set_ylabel("Bell Fidelity A~C", fontsize=12)
-            ax.set_title(f"Fidelity Comparison: Repeater vs Direct\n{data_long['label_loss']}", fontsize=14)
+            ax.set_xticks(positions, [f"Repeater\n({dist_km}km + {dist_km}km)", f"Direct\n({dist_km * 2}km)"])
+            ax.set_title(f"{dist_km * 2}km", fontsize=12)
             ax.grid(True, alpha=0.3, axis='y')
-            
-            plt.tight_layout()
-            plt.savefig(get_img_path(f"Comparison_Fidelity {dist_km}km\n{data_long['label_loss']}"), dpi=300, bbox_inches="tight")
-            plt.close()
+        
+        axes_fid[0].set_ylabel("Bell Fidelity A~C", fontsize=12)
+        fig_fid.suptitle(f"Fidelity Comparison: Repeater vs Direct\n{data_long['label_noise']}", fontsize=14)
+        fig_fid.tight_layout(rect=(0.02, 0.02, 1.0, 0.96))
+        plt.savefig(get_img_path(f"Comparison_Fidelity\n{data_long['label_noise']}"), dpi=300, bbox_inches="tight")
+        plt.show()
+        plt.close()
 
 if __name__ == "__main__":
     all_res_long = longRange.run_longrange_sims(param_sets)
