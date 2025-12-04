@@ -187,15 +187,17 @@ def print_comparison_table(all_res_long, all_res_direct):
     
     print("="*120 + "\n")
 
-def run_comparison(param_sets:list[dict]):
-    all_res_long = longRange.run_longrange_sims(param_sets)
-
+def make_direct_params_from_long(param_sets:list[dict]):
     import copy
     param_direct = copy.deepcopy(param_sets)
     for p in param_direct:
         p["distances"] = [2*d for d in p["distances"]]
     autofill_params(param_direct)
+    return param_direct
 
+def run_comparison(param_sets:list[dict]):
+    all_res_long = longRange.run_longrange_sims(param_sets)
+    param_direct = make_direct_params_from_long(param_sets)
     all_res_direct = direct.run_sims(param_direct)
     
     return all_res_long, all_res_direct

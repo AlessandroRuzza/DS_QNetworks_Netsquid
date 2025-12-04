@@ -10,5 +10,6 @@ if __name__ == "__main__":
     direct.plot_sims(all_res_direct)
     longRange.plot_longrange(all_res_long)
 
-    comp_res_long, comp_res_direct = comparison.run_comparison(param_sets)
+    comp_res_long = all_res_long
+    comp_res_direct = direct.run_sims(comparison.make_direct_params_from_long(param_sets))
     comparison.plot_comparison(comp_res_long, comp_res_direct)
