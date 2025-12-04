@@ -118,7 +118,6 @@ def plot_comparison(all_res_long, all_res_direct):
         fig_fid.suptitle(f"Fidelity Comparison: Repeater vs Direct\n{data_long['label_noise']}", fontsize=14)
         fig_fid.tight_layout(rect=(0.02, 0.02, 1.0, 0.96))
         plt.savefig(get_img_path(f"Comparison_Fidelity\n{data_long['label_noise']}"), dpi=300, bbox_inches="tight")
-        plt.show()
         plt.close()
 
 def print_comparison_table(all_res_long, all_res_direct):
@@ -195,10 +194,10 @@ def make_direct_params_from_long(param_sets:list[dict]):
     autofill_params(param_direct)
     return param_direct
 
-def run_comparison(param_sets:list[dict]):
+def run_comparison(param_sets:list[dict], skip_threshold:float = 1e-3):
     all_res_long = longRange.run_longrange_sims(param_sets)
     param_direct = make_direct_params_from_long(param_sets)
-    all_res_direct = direct.run_sims(param_direct)
+    all_res_direct = direct.run_sims(param_direct, skip_threshold)
     
     return all_res_long, all_res_direct
 
