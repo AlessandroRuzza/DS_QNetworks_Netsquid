@@ -341,14 +341,14 @@ def plot_longrange(all_results):
         plot_violin_fidelity(
             attempts_total,
             fidelities,
-            title=f"Fidelity of long-range attempts (A~C, 1 repeater)\n{data['label_loss']}",
+            title=f"Fidelity of long-range attempts (A~C, 1 repeater)\n{data['label_noise']}",
             params=data["params"],
         )
 
         plot_violin_fidelity_binned(
             attempts_total,
             fidelities,
-            title=f"(binned) Fidelity of long-range attempts (A~C, 1 repeater)\n{data['label_loss']}",
+            title=f"(binned) Fidelity of long-range attempts (A~C, 1 repeater)\n{data['label_noise']}",
             params=data["params"],
         )
 

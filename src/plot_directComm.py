@@ -85,7 +85,6 @@ def plot_pmf_cdf_arrival_times_with_analytic(arrival_times: dict,
     fig.tight_layout(rect=(0.03, 0.08, 1.0, 0.9))
 
     plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
-    plt.show()
     plt.close()
 
 ################## FIDELITY PLOT ##################################################
@@ -104,7 +103,7 @@ def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title, expec
                  linewidth=2, color=color)
         if name not in expected.keys():
             expected[name] = np.mean(data)
-        plt.axhline(expected[name], linestyle='--', color=color)
+        plt.axhline(expected[name], linestyle='--', color=color, label=f"{name} projection")
         
     plt.xlabel("Time units (L/c)", fontsize=12)
     plt.ylabel("Fidelity (A~B)", fontsize=12)
@@ -113,7 +112,6 @@ def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title, expec
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(get_img_path(title), dpi=300)
-    # plt.show()
     plt.close()
 
 ################## MULTIPLE SCENARIO PARAMETERS ##################################################

@@ -2,6 +2,7 @@ import netsquid as ns
 from netsquid.nodes import DirectConnection, Node
 from netsquid.protocols import NodeProtocol
 from netsquid.components import FibreDelayModel, FibreLossModel, QuantumChannel, Message
+from netsquid.components.qmemory import QuantumMemory
 from netsquid.components import T1T2NoiseModel
 ns.set_qstate_formalism(ns.qubits.DenseDMRepr)
 
@@ -16,10 +17,19 @@ class SymmetricDirectConnection(DirectConnection):
         baChannel = QuantumChannel("B->A", length=L, models=modelDict)
         super().__init__(name, abChannel, baChannel)
 
+def make_lossy_mem(T1_mem, T2_mem, n=2):
+    mem = QuantumMemory("memB", num_positions=n)
+    if T1_mem > 0 or T2_mem > 0:
+        mem_noise = T1T2NoiseModel(T1=T1_mem, T2=T2_mem) # type:ignore
+        for mem_pos in mem.mem_positions:
+            mem_pos.models["noise_model"] = mem_noise
+
+    return mem
+
 def create_directConnected_nodes(distance: int, p: list[float], t1:float,t2:float):
     assert len(p) >= 2
     portName = "qubitIO"
-    nodeA = Node("nodeA", port_names=[portName])
+    nodeA = Node("nodeA", port_names=[portName], qmemory=make_lossy_mem(t1,t2,1))
     nodeB = Node("nodeB", port_names=[portName])
     conn = SymmetricDirectConnection("AB_channel", distance, 
                                      FibreLossModel(p[0], p[1]), FibreDelayModel(), 
@@ -44,6 +54,10 @@ class SendProtocol(NodeProtocol):
         ns.qubits.operate([q1,q2], ns.CNOT)
         return (q1, q2)
 
+    @property
+    def qubit(self):
+        return self.node.qmemory.peek(0)[0]
+
     def run(self):
         port = self.node.ports["qubitIO"]
         while not self.stop_flag[0]:
@@ -53,7 +67,7 @@ class SendProtocol(NodeProtocol):
             qubits = self.produce_bell_pair()
             msg = Message(items=[qubits[1]], meta={"id": qubit_id})
             port.tx_output(msg)
-            self.qubit = qubits[0]
+            self.node.qmemory.put(qubits[0], positions=0)
 
             # Time in nanoseconds
             yield self.await_timer(self.timeout)  # time in nanoseconds should be roughly 1 round trip
