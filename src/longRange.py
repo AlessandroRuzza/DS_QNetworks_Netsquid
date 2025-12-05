@@ -26,11 +26,12 @@ def bell_pair():
     ns.qubits.operate([q1, q2], ns.CNOT)
     return q1, q2
 
-def make_lossy_mem(T1_mem, T2_mem, n=2):
-    mem = QuantumMemory("memB", num_positions=n)
-    mem_noise = T1T2NoiseModel(T1=T1_mem, T2=T2_mem) # type:ignore
-    for mem_pos in mem.mem_positions:
-        mem_pos.models["noise_model"] = mem_noise
+def make_lossy_mem(T1_mem, T2_mem, n=2, name="mem"):
+    mem = QuantumMemory(name, num_positions=n)
+    if T1_mem > 0 or T2_mem > 0:
+        mem_noise = T1T2NoiseModel(T1=T1_mem, T2=T2_mem) # type:ignore
+        for mem_pos in mem.mem_positions:
+            mem_pos.models["noise_model"] = mem_noise
 
     return mem
 
@@ -48,9 +49,9 @@ def create_repeater_nodes(
     portB_BC = "portBC"
     portC = "portBC"
 
-    nodeA = Node("nodeA", port_names=[portA], qmemory=make_lossy_mem(T1_mem, T2_mem, 1))
-    nodeB = Node("nodeB", port_names=[portB_AB, portB_BC], qmemory=make_lossy_mem(T1_mem, T2_mem, 2))
-    nodeC = Node("nodeC", port_names=[portC], qmemory=make_lossy_mem(T1_mem, T2_mem, 1))
+    nodeA = Node("nodeA", port_names=[portA], qmemory=make_lossy_mem(T1_mem, T2_mem, 1, "memA"))
+    nodeB = Node("nodeB", port_names=[portB_AB, portB_BC], qmemory=make_lossy_mem(T1_mem, T2_mem, 2, "memB"))
+    nodeC = Node("nodeC", port_names=[portC], qmemory=make_lossy_mem(T1_mem, T2_mem, 1, "memC"))
 
     loss_model = FibreLossModel(p_loss_init, p_loss_length)
     delay_model = FibreDelayModel()
@@ -102,7 +103,6 @@ class SendShortLink(NodeProtocol):
 
             yield self.await_timer(self.timeout)
 
-
 class RepeaterProtocol(NodeProtocol):
     # part 2
 
@@ -142,6 +142,12 @@ class RepeaterProtocol(NodeProtocol):
         self.state["id_BC"] = pair_id
         self.state["have_BC"] = True
 
+    
+    def correct(self, m, mem):
+        if m==1: instr.INSTR_X(mem, [0])
+        if m==2: instr.INSTR_Y(mem, [0]) # NOTE: bell measure = 2 means A~C == b11
+        if m==3: instr.INSTR_Z(mem, [0]) # NOTE: bell measure = 3 means A~C == b10
+
     def run(self):
         while not self.state["done"]:
             while not self.state["have_AB"] or not self.state["have_BC"]:
@@ -153,15 +159,13 @@ class RepeaterProtocol(NodeProtocol):
                     self.handle_recv_BC()
 
             assert self.state["have_AB"] and self.state["have_BC"]
+            m = instr.INSTR_MEASURE_BELL(self.memB, [0,1])[0] #type: ignore
+            self.correct(m, self.state["C_mem"])
+            
             self.state["qA"] = self.state["A_mem"].peek(0)[0]
             self.state["qC"] = self.state["C_mem"].peek(0)[0]
-            m = instr.INSTR_MEASURE_BELL(self.memB, [0,1])[0] #type: ignore
-
-            f00 = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b00)
-            f01 = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b01)
-            f10 = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b10)
-            f11 = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b11)
-            F_AC = max(f00, f01, f10, f11)
+            
+            F_AC = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b00)
 
             self.state["F_AC"] = F_AC
             self.state["m"] = m
