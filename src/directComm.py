@@ -1,37 +1,18 @@
 import netsquid as ns
-from netsquid.nodes import DirectConnection, Node
+from netsquid.nodes import Node
 from netsquid.protocols import NodeProtocol
-from netsquid.components import FibreDelayModel, FibreLossModel, QuantumChannel, Message
-from netsquid.components.qmemory import QuantumMemory
+from netsquid.components import FibreDelayModel, FibreLossModel, Message
 from netsquid.components import T1T2NoiseModel
 ns.set_qstate_formalism(ns.qubits.DenseDMRepr)
 
-class SymmetricDirectConnection(DirectConnection):
-    def __init__(self, name, L:int, loss_model, delay_model, noise_model) -> None:
-        modelDict = {
-                    'quantum_noise_model': noise_model,
-                    'quantum_loss_model': loss_model,
-                    'delay_model': delay_model
-                    }
-        abChannel = QuantumChannel("A->B", length=L, models=modelDict)
-        baChannel = QuantumChannel("B->A", length=L, models=modelDict)
-        super().__init__(name, abChannel, baChannel)
-
-def make_lossy_mem(T1_mem, T2_mem, n=2):
-    mem = QuantumMemory("memB", num_positions=n)
-    if T1_mem > 0 or T2_mem > 0:
-        mem_noise = T1T2NoiseModel(T1=T1_mem, T2=T2_mem) # type:ignore
-        for mem_pos in mem.mem_positions:
-            mem_pos.models["noise_model"] = mem_noise
-
-    return mem
+from core import *
 
 def create_directConnected_nodes(distance: int, p: list[float], t1:float,t2:float):
     assert len(p) >= 2
     portName = "qubitIO"
     nodeA = Node("nodeA", port_names=[portName], qmemory=make_lossy_mem(t1,t2,1))
     nodeB = Node("nodeB", port_names=[portName])
-    conn = SymmetricDirectConnection("AB_channel", distance, 
+    conn = SymmetricConnection("AB_channel", distance, 
                                      FibreLossModel(p[0], p[1]), FibreDelayModel(), 
                                      T1T2NoiseModel(t1,t2)) #type: ignore
     nodeA.connect_to(remote_node=nodeB, connection=conn,
@@ -48,12 +29,6 @@ class SendProtocol(NodeProtocol):
         self.stop_flag = stop_flag
         self.timeout = timeout_us
 
-    def produce_bell_pair(self):
-        q1, q2 = ns.qubits.create_qubits(2)
-        ns.qubits.operate([q1,], ns.H)
-        ns.qubits.operate([q1,q2], ns.CNOT)
-        return (q1, q2)
-
     @property
     def qubit(self):
         return self.node.qmemory.peek(0)[0]
@@ -64,7 +39,7 @@ class SendProtocol(NodeProtocol):
             self.qbitSent += 1
             qubit_id = self.qbitSent
 
-            qubits = self.produce_bell_pair()
+            qubits = bell_pair()
             msg = Message(items=[qubits[1]], meta={"id": qubit_id})
             port.tx_output(msg)
             self.node.qmemory.put(qubits[0], positions=0)
