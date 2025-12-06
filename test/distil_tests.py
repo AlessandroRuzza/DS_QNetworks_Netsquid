@@ -34,10 +34,14 @@ def test_distillation():
 def run_all_tests():
     """Run all manual tests."""
     print("Running all distillation tests...\n")
+    oldRes = 0
     for _ in range(int(1e5)):
         res = test_distillation()
         if res < 0.99:
             print("LESS THAN 0.99! ", res)
+        if res != oldRes:
+            print("New value: ", res)
+            oldRes = res
     print("\nAll tests completed.")
 
 
