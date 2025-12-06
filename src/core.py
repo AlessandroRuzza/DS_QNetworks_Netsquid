@@ -7,14 +7,24 @@ from netsquid.components.qmemory import QuantumMemory
 
 class SymmetricConnection(DirectConnection):
     def __init__(self, name, L:int, loss_model, delay_model, noise_model) -> None:
-        modelDict = {
+        self.modelDict = {
                     'quantum_noise_model': noise_model,
                     'quantum_loss_model': loss_model,
                     'delay_model': delay_model
                     }
-        abChannel = QuantumChannel("A->B", length=L, models=modelDict)
-        baChannel = QuantumChannel("B->A", length=L, models=modelDict)
+        self.length = L
+        abChannel = QuantumChannel("A->B", length=L, models=self.modelDict)
+        baChannel = QuantumChannel("B->A", length=L, models=self.modelDict)
         super().__init__(name, abChannel, baChannel)
+
+    def copy(self, newName):
+        return SymmetricConnection(
+            name=newName,
+            L=self.length,
+            loss_model=self.modelDict['quantum_loss_model'],
+            delay_model=self.modelDict['delay_model'],
+            noise_model=self.modelDict['quantum_noise_model']
+        )
 
 def bell_pair():
     q1, q2 = ns.qubits.create_qubits(2)

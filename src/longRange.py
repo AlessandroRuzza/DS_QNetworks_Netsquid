@@ -1,7 +1,7 @@
 import netsquid as ns
 from netsquid.nodes import Node, DirectConnection
 from netsquid.protocols import NodeProtocol
-from netsquid.components import QuantumChannel, Message
+from netsquid.components import QuantumChannel, Message #type:ignore
 from netsquid.components import FibreDelayModel, FibreLossModel, T1T2NoiseModel
 from netsquid.components.qmemory import QuantumMemory
 import netsquid.components.instructions as instr
@@ -14,15 +14,15 @@ def create_repeater_nodes(
     distance: int,
     p_loss_init: float,
     p_loss_length: float,
-    t1_channel: float,
-    t2_channel: float,
+    T1_channel: float,
+    T2_channel: float,
     T1_mem: float,
     T2_mem: float,
 ):
-    portA = "portAB"
-    portB_AB = "portAB"
-    portB_BC = "portBC"
-    portC = "portBC"
+    portA = "port0AB"
+    portB_AB = "port0AB"
+    portB_BC = "port0BC"
+    portC = "port0BC"
 
     nodeA = Node("nodeA", port_names=[portA], qmemory=make_lossy_mem(T1_mem, T2_mem, 1, "memA"))
     nodeB = Node("nodeB", port_names=[portB_AB, portB_BC], qmemory=make_lossy_mem(T1_mem, T2_mem, 2, "memB"))
@@ -30,7 +30,7 @@ def create_repeater_nodes(
 
     loss_model = FibreLossModel(p_loss_init, p_loss_length)
     delay_model = FibreDelayModel()
-    noise_model = T1T2NoiseModel(t1_channel, t2_channel) # type:ignore
+    noise_model = T1T2NoiseModel(T1_channel, T2_channel) # type:ignore
 
     conn_AB = SymmetricConnection("AB_channel", distance, loss_model, delay_model, noise_model)
     conn_BC = SymmetricConnection("BC_channel", distance, loss_model, delay_model, noise_model)
@@ -40,20 +40,21 @@ def create_repeater_nodes(
     nodeB.connect_to(nodeC, connection=conn_BC,
                      local_port_name=portB_BC, remote_port_name=portC)
 
-    return nodeA, nodeB, nodeC
+    return nodeA, nodeB, nodeC, conn_AB
 
 
 class SendShortLink(NodeProtocol):
     # part 1
 
     def __init__(self, node:Node, port_name: str, link_label: str,
-                 state: dict, timeout_ns: float):
+                 state: dict, timeout_ns: float, n_link:int=0):
         super().__init__(node)
         self.port_name = port_name
         self.link_label = link_label
         self.state = state
         self.timeout = timeout_ns
         self.attempt_id = 0
+        self.n_link = n_link
 
     @property
     def qmem(self):
@@ -70,7 +71,7 @@ class SendShortLink(NodeProtocol):
         while not self.stop_flag() and not self.state["done"]:
             self.attempt_id += 1
             q1, q2 = bell_pair()
-            self.qmem.put(q1, positions=[0])
+            self.qmem.put(q1, positions=[self.n_link])
 
             msg = Message(items=[q2], meta={"link": self.link_label,
                                             "id": self.attempt_id})
@@ -82,9 +83,11 @@ class RepeaterProtocol(NodeProtocol):
     # part 2
 
     def __init__(self, node: QuantumMemory,
-                 state: dict):
+                 state: dict,
+                 n_link:int = 0):
         super().__init__(node)
         self.state = state
+        self.n_link = n_link
 
     @property
     def memB(self):
@@ -92,10 +95,10 @@ class RepeaterProtocol(NodeProtocol):
     
     @property
     def portAB(self):
-        return self.node.ports["portAB"]
+        return self.node.ports[f"port{self.n_link}AB"]
     @property
     def portBC(self):
-        return self.node.ports["portBC"]
+        return self.node.ports[f"port{self.n_link}BC"]
 
     def handle_recv_AB(self):
         msg = self.portAB.rx_input()
@@ -103,7 +106,7 @@ class RepeaterProtocol(NodeProtocol):
         q_from_A = msg.items[0]
         pair_id = meta["id"]
 
-        self.memB.put(q_from_A, positions=0)
+        self.memB.put(q_from_A, positions=self.n_link)
         self.state["id_AB"] = pair_id
         self.state["have_AB"] = True
 
@@ -113,15 +116,15 @@ class RepeaterProtocol(NodeProtocol):
         q_from_C = msg.items[0]
         pair_id = meta["id"]
 
-        self.memB.put(q_from_C, positions=1)
+        self.memB.put(q_from_C, positions=self.n_link+1)
         self.state["id_BC"] = pair_id
         self.state["have_BC"] = True
 
     
     def correct(self, m, mem):
-        if m==1: instr.INSTR_X(mem, [0])
-        if m==2: instr.INSTR_Y(mem, [0]) # NOTE: bell measure = 2 means A~C == b11
-        if m==3: instr.INSTR_Z(mem, [0]) # NOTE: bell measure = 3 means A~C == b10
+        if m==1: instr.INSTR_X(mem, [self.n_link])
+        if m==2: instr.INSTR_Y(mem, [self.n_link]) # NOTE: bell measure = 2 means A~C == b11
+        if m==3: instr.INSTR_Z(mem, [self.n_link]) # NOTE: bell measure = 3 means A~C == b10
 
     def run(self):
         while not self.state["done"]:
@@ -134,11 +137,11 @@ class RepeaterProtocol(NodeProtocol):
                     self.handle_recv_BC()
 
             assert self.state["have_AB"] and self.state["have_BC"]
-            m = instr.INSTR_MEASURE_BELL(self.memB, [0,1])[0] #type: ignore
+            m = instr.INSTR_MEASURE_BELL(self.memB, [self.n_link, self.n_link+1])[0] #type: ignore
             self.correct(m, self.state["C_mem"])
             
-            self.state["qA"] = self.state["A_mem"].peek(0)[0]
-            self.state["qC"] = self.state["C_mem"].peek(0)[0]
+            self.state["qA"] = self.state["A_mem"].peek(self.n_link)[0]
+            self.state["qC"] = self.state["C_mem"].peek(self.n_link)[0]
             
             F_AC = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b00)
 
@@ -164,7 +167,7 @@ def setup_longrange_sim(
     for _ in range(shots):
         ns.sim_reset()
 
-        nodeA, nodeB, nodeC = create_repeater_nodes(
+        nodeA, nodeB, nodeC, _ = create_repeater_nodes(
             distance, p_loss_init, p_loss_length,
             t1_channel, t2_channel,
             T1_mem, T2_mem,
@@ -188,8 +191,8 @@ def setup_longrange_sim(
 
         timeout = 2 * distance / C  # ns
 
-        protoA = SendShortLink(nodeA, "portAB", "AB", state, timeout)
-        protoC = SendShortLink(nodeC, "portBC", "BC", state, timeout)
+        protoA = SendShortLink(nodeA, "port0AB", "AB", state, timeout)
+        protoC = SendShortLink(nodeC, "port0BC", "BC", state, timeout)
         protoB = RepeaterProtocol(nodeB, state)
 
         protoA.start()
