@@ -187,6 +187,7 @@ def setup_swap_then_distill_sim(
                 F_AC = ns.qubits.fidelity((qA, qC), ns.b00)
                 # print("Fidelity post distillation b00 = ", F_AC)
 
+        assert F_AC >= 0
         sim_end_time = ns.sim_time(magnitude=ns.MICROSECOND)
         results.append(
             (sim_end_time, attempts_total, F_AC)
