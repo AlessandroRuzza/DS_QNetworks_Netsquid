@@ -43,50 +43,58 @@ class Distillation():
     class Failure(Exception):
         pass
 
-    def __init__(self, nodeA: Node, nodeC: Node, num_links: int):
+    def __init__(self, nodeA: Node, nodeB: Node, num_links: int, isDistillAB:bool):
         self.nodeA = nodeA
-        self.nodeC = nodeC
+        self.nodeB = nodeB
         self.num_links = num_links
+        self.isDistillAB = isDistillAB
 
     @property
     def memA(self) -> QuantumMemory:
         return self.nodeA.qmemory
     @property
-    def memC(self) -> QuantumMemory:
-        return self.nodeC.qmemory
+    def memB(self) -> QuantumMemory:
+        return self.nodeB.qmemory
 
     from netsquid.examples.purify import Distil as Distil
     INSTR_ROT_A = Distil._INSTR_Rx
-    INSTR_ROT_C = Distil._INSTR_RxC
+    INSTR_ROT_B = Distil._INSTR_RxC
 
-    def _distill_operation(self, idx1, idx2):
-        self.INSTR_ROT_A(self.memA, [idx1])
-        self.INSTR_ROT_A(self.memA, [idx2])
-        instr.INSTR_CNOT(self.memA, [idx1, idx2])
-
-        self.INSTR_ROT_C(self.memC, [idx1])
-        self.INSTR_ROT_C(self.memC, [idx2])
-        instr.INSTR_CNOT(self.memC, [idx1, idx2])
+    def _distill_operation(self, idx1_A, idx2_A):
+        idx1_B = 2*idx1_A if self.isDistillAB else 2*idx1_A+1
+        idx2_B = 2*idx2_A if self.isDistillAB else 2*idx2_A+1
         
-        mA = instr.INSTR_MEASURE(self.memA, [idx2])[0] #type: ignore
-        mC = instr.INSTR_MEASURE(self.memC, [idx2])[0] #type: ignore
-        return mA == mC
+        self.INSTR_ROT_A(self.memA, [idx1_A])
+        self.INSTR_ROT_A(self.memA, [idx2_A])
 
-    def _compactMem(self, mem, results):
+        self.INSTR_ROT_B(self.memB, [idx1_B])
+        self.INSTR_ROT_B(self.memB, [idx2_B])
+        
+        instr.INSTR_CNOT(self.memA, [idx1_A, idx2_A])
+        instr.INSTR_CNOT(self.memB, [idx1_B, idx2_B])
+        
+        mA = instr.INSTR_MEASURE(self.memA, [idx2_A])[0] #type: ignore
+        mB = instr.INSTR_MEASURE(self.memB, [idx2_B])[0] #type: ignore
+        return mA == mB
+
+    def _compactMem(self, mem, results, isMemB:bool):
         nextFreeSpot = 0
+        offset = 1 if not self.isDistillAB and isMemB else 0
         for i, res in enumerate(results):
             if res:
-                q = mem.pop(2*i)[0]
-                mem.put([q], positions=[nextFreeSpot])
-                nextFreeSpot += 1
+                idx = 4*i if isMemB else 2*i
+                idx += offset
+                q = mem.pop(idx)[0]
+                mem.put([q], positions=[nextFreeSpot + offset])
+                nextFreeSpot += 2
 
     def _distillPass(self):
         results = []
         for i in range(0, self.num_links-1, 2):
             results.append(self._distill_operation(i, i+1))
         # Compact memory
-        self._compactMem(self.memA, results)
-        self._compactMem(self.memC, results)
+        self._compactMem(self.memA, results, isMemB=False)
+        self._compactMem(self.memB, results, isMemB=True)
 
         n_successes = results.count(True)
         self.num_links = n_successes + self.num_links % 2
@@ -115,6 +123,18 @@ def reset_state(nodeA, nodeC, num_links:int):
             "m":None,
         })
     return state
+
+class RepeaterNoSwapProtocol(longRange.RepeaterProtocol):
+    def run(self):
+        while not self.state["have_AB"] or not self.state["have_BC"]:
+            expr = yield self.await_port_input(self.portAB) | self.await_port_input(self.portBC)      
+
+            if expr.first_term.value:
+                self._handle_recv_AB()
+            if expr.second_term.value:
+                self._handle_recv_BC()
+
+        assert self.state["have_AB"] and self.state["have_BC"]
 
 def setup_distill_then_swap_sim(
     shots: int,
@@ -160,7 +180,7 @@ def setup_distill_then_swap_sim(
                 add_connection([nodeA, nodeB, nodeC], f"port{i}", connection, f"channel{i}")
                 protoA.append(longRange.SendShortLink(nodeA, f"port{i}AB", "AB", state[i], timeout, n_link=i))
                 protoC.append(longRange.SendShortLink(nodeC, f"port{i}BC", "BC", state[i], timeout, n_link=i))
-                protoB.append(longRange.RepeaterProtocol(nodeB, state[i], n_link=i))
+                protoB.append(RepeaterNoSwapProtocol(nodeB, state[i], n_link=i))
 
                 protoA[i].start()
                 protoB[i].start()
@@ -169,8 +189,8 @@ def setup_distill_then_swap_sim(
             ns.sim_run()
 
             # distillation on A-B and B-C links
-            distillerAB = Distillation(nodeA, nodeB, num_links)
-            distillerBC = Distillation(nodeB, nodeC, num_links)
+            distillerAB = Distillation(nodeA, nodeB, num_links, isDistillAB=True)
+            distillerBC = Distillation(nodeC, nodeB, num_links, isDistillAB=False)
             successAB = distillerAB.distill()
             successBC = distillerBC.distill()
 
@@ -184,10 +204,7 @@ def setup_distill_then_swap_sim(
                 continue  # try again
 
             # --- Trigger swap at B ---
-            for i in range(num_links):
-                protoB[i] = longRange.RepeaterProtocol(nodeB, state[i], n_link=i)  # swap step
-                protoB[i].start()
-            ns.sim_run() #run swap
+            protoB[0]._swap()
 
             # Measure A~C fidelity
             try:

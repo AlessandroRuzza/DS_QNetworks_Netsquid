@@ -100,56 +100,58 @@ class RepeaterProtocol(NodeProtocol):
     def portBC(self):
         return self.node.ports[f"port{self.n_link}BC"]
 
-    def handle_recv_AB(self):
+    def _handle_recv_AB(self):
         msg = self.portAB.rx_input()
         meta = msg.meta["meta"]
         q_from_A = msg.items[0]
         pair_id = meta["id"]
 
-        self.memB.put(q_from_A, positions=self.n_link)
+        self.memB.put(q_from_A, positions=2*self.n_link)
         self.state["id_AB"] = pair_id
         self.state["have_AB"] = True
 
-    def handle_recv_BC(self):
+    def _handle_recv_BC(self):
         msg = self.portBC.rx_input()
         meta = msg.meta["meta"]
         q_from_C = msg.items[0]
         pair_id = meta["id"]
 
-        self.memB.put(q_from_C, positions=self.n_link+1)
+        self.memB.put(q_from_C, positions=2*self.n_link+1)
         self.state["id_BC"] = pair_id
         self.state["have_BC"] = True
 
-    
-    def correct(self, m, mem):
+    def _correct(self, m, mem):
         if m==1: instr.INSTR_X(mem, [self.n_link])
         if m==2: instr.INSTR_Y(mem, [self.n_link]) # NOTE: bell measure = 2 means A~C == b11
         if m==3: instr.INSTR_Z(mem, [self.n_link]) # NOTE: bell measure = 3 means A~C == b10
+    
+    def _swap(self):
+        m = instr.INSTR_MEASURE_BELL(self.memB, [2*self.n_link, 2*self.n_link+1])[0] #type: ignore
+        self._correct(m, self.state["C_mem"])
+        
+        self.state["qA"] = self.state["A_mem"].peek(self.n_link)[0]
+        self.state["qC"] = self.state["C_mem"].peek(self.n_link)[0]
+        
+        F_AC = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b00)
 
+        self.state["F_AC"] = F_AC
+        self.state["m"] = m
+        self.state["swap_time"] = ns.sim_time(magnitude=ns.MICROSECOND)
+        self.state["success"] = True
+        self.state["done"] = True
+    
     def run(self):
         while not self.state["done"]:
             while not self.state["have_AB"] or not self.state["have_BC"]:
                 expr = yield self.await_port_input(self.portAB) | self.await_port_input(self.portBC)      
 
                 if expr.first_term.value:
-                    self.handle_recv_AB()
+                    self._handle_recv_AB()
                 if expr.second_term.value:
-                    self.handle_recv_BC()
+                    self._handle_recv_BC()
 
             assert self.state["have_AB"] and self.state["have_BC"]
-            m = instr.INSTR_MEASURE_BELL(self.memB, [self.n_link, self.n_link+1])[0] #type: ignore
-            self.correct(m, self.state["C_mem"])
-            
-            self.state["qA"] = self.state["A_mem"].peek(self.n_link)[0]
-            self.state["qC"] = self.state["C_mem"].peek(self.n_link)[0]
-            
-            F_AC = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b00)
-
-            self.state["F_AC"] = F_AC
-            self.state["m"] = m
-            self.state["swap_time"] = ns.sim_time(magnitude=ns.MICROSECOND)
-            self.state["success"] = True
-            self.state["done"] = True
+            self._swap()
 
 def setup_longrange_sim(
     shots: int,

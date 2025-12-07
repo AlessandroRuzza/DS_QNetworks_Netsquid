@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
 
-import distillation as distil
+import swap_then_distill as distil
 from core import *
 
 def test_distillation():

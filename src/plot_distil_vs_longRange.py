@@ -1,7 +1,7 @@
 """
 Compare distillation (swap then distill) vs simple swap (long range) protocols.
 """
-from distillation import setup_swap_then_distill_sim
+from swap_then_distill import setup_swap_then_distill_sim
 import plot_longRange as longRange
 from scenarios import *
 
