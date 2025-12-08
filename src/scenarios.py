@@ -74,17 +74,17 @@ param_sets = [
         "t1": 0,
         "t2": 0,
     },
-    {
-        "name": "Low-Noise fibre (T1 = 500km travel time) (ideal memories)",
-        "shots": 1000,
-        "distances": [5, 20, 50],
-        "p_loss_init": 0.0,
-        "p_loss_length": 0.2,
-        "t1": travel_ns_km * 500,
-        "t2": travel_ns_km * 50,
-        "t1_mem": 0,
-        "t2_mem": 0,
-    },
+    # {
+    #     "name": "Low-Noise fibre (T1 = 500km travel time) (ideal memories)",
+    #     "shots": 1000,
+    #     "distances": [5, 20, 50],
+    #     "p_loss_init": 0.0,
+    #     "p_loss_length": 0.2,
+    #     "t1": travel_ns_km * 500,
+    #     "t2": travel_ns_km * 50,
+    #     "t1_mem": 0,
+    #     "t2_mem": 0,
+    # },
     {
         "name": "Low-Noise fibre (T1 = 500km travel time) (noisy memories)",
         "shots": 1000,
@@ -103,15 +103,15 @@ param_sets = [
         "t1": travel_ns_km * 50,
         "t2": travel_ns_km * 5,
     },   
-    {
-        "name": "Extreme-Noise fibre (T1 = 5km travel time)",
-        "shots": 1000,
-        "distances": [5, 20, 50],
-        "p_loss_init": 0.0,
-        "p_loss_length": 0.2,
-        "t1": travel_ns_km * 5,
-        "t2": travel_ns_km * 0.5,
-    },
+    # {
+    #     "name": "Extreme-Noise fibre (T1 = 5km travel time)",
+    #     "shots": 1000,
+    #     "distances": [5, 20, 50],
+    #     "p_loss_init": 0.0,
+    #     "p_loss_length": 0.2,
+    #     "t1": travel_ns_km * 5,
+    #     "t2": travel_ns_km * 0.5,
+    # },
 ]
 
 def autofill_params(param_sets:list[dict]):
