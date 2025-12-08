@@ -1,7 +1,7 @@
 import netsquid as ns
 from netsquid.nodes import Node
 from netsquid.protocols import NodeProtocol
-from netsquid.components import FibreDelayModel, FibreLossModel, Message
+from netsquid.components import FibreDelayModel, FibreLossModel, Message  #type:ignore
 from netsquid.components import T1T2NoiseModel
 ns.set_qstate_formalism(ns.qubits.DenseDMRepr)
 
