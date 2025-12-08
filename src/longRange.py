@@ -1,12 +1,13 @@
 import netsquid as ns
-from netsquid.nodes import Node, DirectConnection
+from netsquid.nodes import Node
 from netsquid.protocols import NodeProtocol
-from netsquid.components import QuantumChannel, Message #type:ignore
+from netsquid.components import Message #type:ignore
 from netsquid.components import FibreDelayModel, FibreLossModel, T1T2NoiseModel
 from netsquid.components.qmemory import QuantumMemory
 import netsquid.components.instructions as instr
 
 from core import *
+from scenarios import args
 
 ns.set_qstate_formalism(ns.qubits.DenseDMRepr)
 
@@ -24,9 +25,11 @@ def create_repeater_nodes(
     portB_BC = "port0BC"
     portC = "port0BC"
 
-    nodeA = Node("nodeA", port_names=[portA], qmemory=make_lossy_mem(T1_mem, T2_mem, 1, "memA"))
+    T1_A, T2_A = (T1_mem, T2_mem) if args.noisyACMemories else (0,0)
+    T1_C, T2_C = (T1_A, T2_A)
+    nodeA = Node("nodeA", port_names=[portA], qmemory=make_lossy_mem(T1_A, T2_A, 1, "memA"))
     nodeB = Node("nodeB", port_names=[portB_AB, portB_BC], qmemory=make_lossy_mem(T1_mem, T2_mem, 2, "memB"))
-    nodeC = Node("nodeC", port_names=[portC], qmemory=make_lossy_mem(T1_mem, T2_mem, 1, "memC"))
+    nodeC = Node("nodeC", port_names=[portC], qmemory=make_lossy_mem(T1_C, T2_C, 1, "memC"))
 
     loss_model = FibreLossModel(p_loss_init, p_loss_length)
     delay_model = FibreDelayModel()

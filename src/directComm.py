@@ -3,6 +3,7 @@ from netsquid.nodes import Node
 from netsquid.protocols import NodeProtocol
 from netsquid.components import FibreDelayModel, FibreLossModel, Message  #type:ignore
 from netsquid.components import T1T2NoiseModel
+from scenarios import args
 ns.set_qstate_formalism(ns.qubits.DenseDMRepr)
 
 from core import *
@@ -10,7 +11,8 @@ from core import *
 def create_directConnected_nodes(distance: int, p: list[float], t1:float,t2:float):
     assert len(p) >= 2
     portName = "qubitIO"
-    nodeA = Node("nodeA", port_names=[portName], qmemory=make_lossy_mem(t1,t2,1))
+    t1_A, t2_A = (t1, t2) if args.noisyACMemories else (0,0)
+    nodeA = Node("nodeA", port_names=[portName], qmemory=make_lossy_mem(t1_A,t2_A,1))
     nodeB = Node("nodeB", port_names=[portName])
     conn = SymmetricConnection("AB_channel", distance, 
                                      FibreLossModel(p[0], p[1]), FibreDelayModel(), 
