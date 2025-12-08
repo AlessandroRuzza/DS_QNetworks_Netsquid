@@ -115,7 +115,7 @@ def setup_sim(
         ideal_state = ns.b00  # |00⟩ + |11> state
         q1 = AProtocol.qubit 
         q2 = BProtocol.qubit
-        fidelity = ns.qubits.qubitapi.fidelity([q1, q2], ideal_state)
+        fidelity = ns.qubits.qubitapi.fidelity([q1, q2], ideal_state, squared=True)
 
         results.append((simulation_end_time, total_qubits_sent, arrival_time, fidelity))
 

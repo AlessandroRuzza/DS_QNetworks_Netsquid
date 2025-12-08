@@ -132,7 +132,7 @@ class RepeaterProtocol(NodeProtocol):
         self.state["qA"] = self.state["A_mem"].peek(self.n_link)[0]
         self.state["qC"] = self.state["C_mem"].peek(self.n_link)[0]
         
-        F_AC = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b00)
+        F_AC = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b00, squared=True)
 
         self.state["F_AC"] = F_AC
         self.state["m"] = m

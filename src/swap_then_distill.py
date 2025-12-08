@@ -184,7 +184,7 @@ def setup_swap_then_distill_sim(
                 assert distiller.num_links == 1
                 qA = distiller.qubitA(0)
                 qC = distiller.qubitC(0)
-                F_AC = ns.qubits.fidelity((qA, qC), ns.b00)
+                F_AC = ns.qubits.fidelity((qA, qC), ns.b00, squared=True)
                 # print("Fidelity post distillation b00 = ", F_AC)
 
         assert F_AC >= 0

@@ -210,7 +210,7 @@ def setup_distill_then_swap_sim(
             try:
                 qA = nodeA.qmemory.peek(0)[0]
                 qC = nodeC.qmemory.peek(0)[0]
-                F_AC = ns.qubits.fidelity((qA, qC), ns.b00)
+                F_AC = ns.qubits.fidelity((qA, qC), ns.b00, squared=True)
             except Exception:
                 continue # retry
 
