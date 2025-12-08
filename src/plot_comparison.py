@@ -194,7 +194,7 @@ def make_direct_params_from_long(param_sets:list[dict]):
     autofill_params(param_direct)
     return param_direct
 
-def run_comparison(param_sets:list[dict], skip_threshold:float = 1e-3):
+def run_comparison(param_sets:list[dict], skip_threshold:float):
     all_res_long = longRange.run_longrange_sims(param_sets)
     param_direct = make_direct_params_from_long(param_sets)
     all_res_direct = direct.run_sims(param_direct, skip_threshold)
@@ -202,6 +202,6 @@ def run_comparison(param_sets:list[dict], skip_threshold:float = 1e-3):
     return all_res_long, all_res_direct
 
 if __name__ == "__main__":
-    all_res_long, all_res_direct = run_comparison(param_sets)
+    all_res_long, all_res_direct = run_comparison(param_sets, args.skipThreshold)
     plot_comparison(all_res_long, all_res_direct)
     print_comparison_table(all_res_long, all_res_direct)

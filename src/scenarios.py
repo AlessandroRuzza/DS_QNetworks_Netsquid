@@ -132,10 +132,12 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-m", "--multiplyShotsBy", "--multiply", "--multiplyShots", type=float, default=1, help="Multiply shots by this factor")
 parser.add_argument("--noisyACMemories", "--noisyMem", action="store_true", help="Use noisy AC memories (default: False)")
+parser.add_argument("--skipThreshold", "--skip", type=float, default=0, help="Use noisy AC memories (default: False)")
 args = parser.parse_args()
 
 print(f"Using noisy memories in end-nodes: {args.noisyACMemories}")
 print(f"Multiplying shots by: {args.multiplyShotsBy}")
+print(f"Skipping executions with pge <= {args.skipThreshold}")
 
 if args.multiplyShotsBy > 0:
     for params in param_sets:
