@@ -1,3 +1,4 @@
+import sys
 import netsquid as ns
 from netsquid.nodes import Node
 from netsquid.protocols import NodeProtocol

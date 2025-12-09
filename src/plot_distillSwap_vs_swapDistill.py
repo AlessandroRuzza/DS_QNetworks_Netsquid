@@ -232,11 +232,11 @@ def plot_distill_then_vs_swap_then(all_res_distill_then, all_res_swap_then):
 
 def print_comparison_table(all_res_distil_then, all_res_swap_then):
     """Print comparison of distill→swap vs swap→distill."""
-    print("\n" + "=" * 120)
+    print("\n" + "=" * 138)
     print("COMPARISON TABLE: Distill->Swap vs Swap->Distill")
-    print("=" * 120)
-    print(f"{'Scenario':<30} {'Distance':<12} {'Method':<20} {'Avg Time Units':<18} {'Avg Fidelity':<15}")
-    print("-" * 120)
+    print("=" * 138)
+    print(f"{'Scenario':<30} {'Distance':<12} {'Method':<20} {'Avg Time Units':<18} {'Avg Fidelity':<15} {'Secret Key Rate':<18}")
+    print("-" * 138)
 
     for label_distil in sorted(all_res_distil_then.keys()):
         label_swap = None
@@ -260,9 +260,14 @@ def print_comparison_table(all_res_distil_then, all_res_swap_then):
 
             attempts_distil = data_distil["attempts_total"][dist_key]
             fidelities_distil = [f for f in data_distil["fidelities"][dist_key] if f is not None]
+            skr_distil = data_distil["keyRates"][dist_key]
 
             attempts_swap = data_swap["attempts_total"][dist_key]
             fidelities_swap = [f for f in data_swap["fidelities"][dist_key] if f is not None]
+            skr_swap = data_swap["keyRates"][dist_key]
+
+            avg_skr_swap = np.mean(skr_swap) if len(skr_swap) > 0 else 0
+            avg_skr_distil = np.mean(skr_distil) if len(skr_distil) > 0 else 0
 
             avg_time_distil = np.mean(attempts_distil) if attempts_distil else 0
             avg_fid_distil = np.mean(fidelities_distil) if fidelities_distil else 0
@@ -271,14 +276,14 @@ def print_comparison_table(all_res_distil_then, all_res_swap_then):
             avg_fid_swap = np.mean(fidelities_swap) if fidelities_swap else 0
 
             print(
-                f"{scenario_name:<30} {dist_key:<12} {'Distill->Swap':<20} {avg_time_distil:<18.2f} {avg_fid_distil:<15.4f}"
+                f"{scenario_name:<30} {dist_key:<12} {'Distill->Swap':<20} {avg_time_distil:<18.2f} {avg_fid_distil:<15.4f} {avg_skr_distil:<18.3f}"
             )
             print(
-                f"{'':<30} {'':<12} {'Swap->Distill':<20} {avg_time_swap:<18.2f} {avg_fid_swap:<15.4f}"
+                f"{'':<30} {'':<12} {'Swap->Distill':<20} {avg_time_swap:<18.2f} {avg_fid_swap:<15.4f} {avg_skr_swap:<18.3f}"
             )
-            print("-" * 120)
+            print("-" * 138)
 
-    print("=" * 120 + "\n")
+    print("=" * 138 + "\n")
 
 
 if __name__ == "__main__":
