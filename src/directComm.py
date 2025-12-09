@@ -125,6 +125,7 @@ def setup_sim(
 
         results.append((simulation_end_time, total_qubits_sent, arrival_time, fidelity, keyRate))
 
+    sys.stdout.flush()
     return results
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+import sys
 from core import *
 import netsquid as ns
 from netsquid.components import FibreDelayModel, FibreLossModel, T1T2NoiseModel
@@ -229,6 +230,7 @@ def setup_distill_then_swap_sim(
             (sim_end_time, attempts_total, F_AC, keyRate)
         )
 
+    sys.stdout.flush()
     return results
 
 if __name__ == "__main__":

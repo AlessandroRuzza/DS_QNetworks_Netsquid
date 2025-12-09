@@ -226,6 +226,7 @@ def setup_longrange_sim(
             (sim_end_time, attempts_AB, attempts_BC, attempts_total, swap_time, F_AC, keyRate)
         )
 
+    sys.stdout.flush()
     return results
 
 
