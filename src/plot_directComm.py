@@ -129,6 +129,7 @@ def run_sims(param_sets:list[dict], pge_skip_threshold=0.0):
             "attempts_total": {},
             "arrival_times": {},
             "fidelities": {},
+            "keyRates": {},
             "params": params,
         }
 
@@ -152,13 +153,12 @@ def run_sims(param_sets:list[dict], pge_skip_threshold=0.0):
                 t2=params["t2"],
             ))
             
-            key = f"{dist}km"
-
         for d, run in zip(params["distances"], results):
             all_results[label]["sim_end_times"][f"{d}km"] = [res[0] for res in run]
             all_results[label]["attempts_total"][f"{d}km"] = [res[1] for res in run]
             all_results[label]["arrival_times"][f"{d}km"] = [res[2] for res in run]
             all_results[label]["fidelities"][f"{d}km"] = [res[3] for res in run]
+            all_results[label]["keyRates"][f"{d}km"] = [res[4] for res in run]
             
     print("All simulations completed!")
     return all_results

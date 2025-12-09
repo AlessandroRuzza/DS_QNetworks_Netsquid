@@ -157,6 +157,7 @@ def setup_distill_then_swap_sim(
         success = False
         attempts_total = 0
         F_AC = -1
+        keyRate = -1
 
         # generation loop
         while not success:
@@ -211,6 +212,10 @@ def setup_distill_then_swap_sim(
                 qA = nodeA.qmemory.peek(0)[0] #type:ignore
                 qC = nodeC.qmemory.peek(0)[0] #type:ignore
                 F_AC = ns.qubits.fidelity((qA, qC), ns.b00, squared=True)
+                keyRate = secret_key_rate_from_density_matrix(
+                                    ns.qubits.reduced_dm([qA,qC]), 
+                                    ns.sim_time(magnitude=ns.SECOND)
+                                    )
             except Exception:
                 continue # retry
 
@@ -218,9 +223,10 @@ def setup_distill_then_swap_sim(
 
         # Store
         assert F_AC >= 0
+        assert keyRate >= 0
         sim_end_time = ns.sim_time(magnitude=ns.MICROSECOND)
         results.append(
-            (sim_end_time, attempts_total, F_AC)
+            (sim_end_time, attempts_total, F_AC, keyRate)
         )
 
     return results
@@ -235,11 +241,13 @@ if __name__ == "__main__":
                                 T2_mem=t2, 
                                 )
 
-    _, attempts_total, fidelities = zip(*results)
+    _, attempts_total, fidelities, keyRates = zip(*results)
 
     avg_fidelity = sum(fidelities) / len(fidelities)
     avg_attempts = sum(attempts_total) / len(attempts_total)
+    avg_keyRate = sum(keyRates) / len(keyRates)
 
     print("Avg fidelity = ", avg_fidelity)
     print("Avg time units = ", avg_attempts)
+    print("Avg key rate = ", avg_keyRate)
     

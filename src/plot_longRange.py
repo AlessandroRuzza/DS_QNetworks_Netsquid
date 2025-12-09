@@ -297,6 +297,7 @@ def run_longrange_sims(param_sets:list[dict]):
             "label_noise": label_noise(params),
             "attempts_total": {},
             "fidelities": {},
+            "keyRates": {},
             "params": params,
         }
 
@@ -318,9 +319,11 @@ def run_longrange_sims(param_sets:list[dict]):
             key = f"{dist}km"
             attempts_total = [r[3] for r in res]
             fidelities = [r[5] for r in res]
+            keyRates = [r[6] for r in res]
 
             all_results[label]["attempts_total"][key] = attempts_total
             all_results[label]["fidelities"][key] = fidelities
+            all_results[label]["keyRates"][key] = keyRates
 
     print("All long-range simulations completed!")
     return all_results

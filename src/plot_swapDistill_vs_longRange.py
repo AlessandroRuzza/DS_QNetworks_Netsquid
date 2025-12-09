@@ -25,6 +25,7 @@ def run_distillation_sims(param_sets):
         results_by_distance = defaultdict(list)
         attempts_by_distance = defaultdict(list)
         fidelities_by_distance = defaultdict(list)
+        keyRates_by_distance = defaultdict(list)
         
         for dist in params["distances"]:
             print(
@@ -42,16 +43,18 @@ def run_distillation_sims(param_sets):
             )
             
             dist_key = f"{dist}km"
-            for sim_end_time, attempts_total, F_AC in results:
+            for sim_end_time, attempts_total, F_AC, keyRate in results:
                 results_by_distance[dist_key].append((sim_end_time, attempts_total, F_AC))
                 attempts_by_distance[dist_key].append(attempts_total)
                 fidelities_by_distance[dist_key].append(F_AC)
+                keyRates_by_distance[dist_key].append(keyRate)
         
         all_results[label] = {
             "params": params,
             "results": results_by_distance,
             "attempts_total": attempts_by_distance,
             "fidelities": fidelities_by_distance,
+            "keyRates": keyRates_by_distance,
             "label_full": label_full(params),
             "label_loss": label_loss(params),
             "label_noise": label_noise(params),
@@ -181,11 +184,11 @@ def print_comparison_table(all_res_distil, all_res_long):
     Rows: scenario-distance pairs
     Columns: avg time units, avg fidelity for both methods
     """
-    print("\n" + "="*120)
+    print("\n" + "="*130)
     print("COMPARISON TABLE: Swap+Distill vs Simple Swap")
-    print("="*120)
-    print(f"{'Scenario':<30} {'Distance':<12} {'Method':<20} {'Avg Time Units':<18} {'Avg Fidelity':<15}")
-    print("-"*120)
+    print("="*130)
+    print(f"{'Scenario':<30} {'Distance':<12} {'Method':<12} {'Avg Time Units':<18} {'Avg Fidelity':<15} {'Secret-Key Rate':<18}")
+    print("-"*130)
     
     for label_distil in sorted(all_res_distil.keys()):
         # Find matching long range result
@@ -215,23 +218,27 @@ def print_comparison_table(all_res_distil, all_res_long):
             # Distillation stats
             attempts_distil = data_distil["attempts_total"][dist_key]
             fidelities_distil = [f for f in data_distil["fidelities"][dist_key] if f is not None]
+            keyRates_distil = [k for k in data_distil["keyRates"][dist_key] if k is not None]
             
             avg_time_distil = np.mean(attempts_distil) if attempts_distil else 0
             avg_fid_distil = np.mean(fidelities_distil) if fidelities_distil else 0
+            avg_skr_distil = np.mean(keyRates_distil) if keyRates_distil else 0
             
             # Long range stats
             attempts_long = data_long["attempts_total"][dist_key]
             fidelities_long = [f for f in data_long["fidelities"][dist_key] if f is not None]
+            keyRates_long = [k for k in data_long["keyRates"][dist_key] if k is not None]
             
             avg_time_long = np.mean(attempts_long) if attempts_long else 0
             avg_fid_long = np.mean(fidelities_long) if fidelities_long else 0
+            avg_skr_long = np.mean(keyRates_long) if keyRates_long else 0
             
             # Print distillation row
-            print(f"{scenario_name:<30} {dist_key:<12} {'Swap+Distill':<20} {avg_time_distil:<18.2f} {avg_fid_distil:<15.4f}")
-            print(f"{'':<30} {'':<12} {'Simple Swap':<20} {avg_time_long:<18.2f} {avg_fid_long:<15.4f}")
-            print("-"*120)
+            print(f"{scenario_name:<30} {dist_key:<12} {'Swap+Distill':<12} {avg_time_distil:<18.2f} {avg_fid_distil:<15.4f} {avg_skr_distil:<18.6f}")
+            print(f"{'':<30} {'':<12} {'Simple Swap':<12} {avg_time_long:<18.2f} {avg_fid_long:<15.4f} {avg_skr_long:<18.6f}")
+            print("-"*130)
     
-    print("="*120 + "\n")
+    print("="*130 + "\n")
 
 
 if __name__ == "__main__":

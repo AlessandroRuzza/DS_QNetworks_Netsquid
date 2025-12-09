@@ -132,12 +132,19 @@ class RepeaterProtocol(NodeProtocol):
         m = instr.INSTR_MEASURE_BELL(self.memB, [2*self.n_link, 2*self.n_link+1])[0] #type: ignore
         self._correct(m, self.state["C_mem"])
         
-        self.state["qA"] = self.state["A_mem"].peek(self.n_link)[0]
-        self.state["qC"] = self.state["C_mem"].peek(self.n_link)[0]
+        qA = self.state["A_mem"].peek(self.n_link)[0]
+        self.state["qA"] = qA
+        qC = self.state["C_mem"].peek(self.n_link)[0]
+        self.state["qC"] = qC
         
         F_AC = ns.qubits.fidelity([self.state["qA"], self.state["qC"]], ns.b00, squared=True)
+        keyRate = secret_key_rate_from_density_matrix(
+                            ns.qubits.reduced_dm([qA,qC]), 
+                            ns.sim_time(magnitude=ns.SECOND)
+                            )
 
         self.state["F_AC"] = F_AC
+        self.state["keyRate"] = keyRate
         self.state["m"] = m
         self.state["swap_time"] = ns.sim_time(magnitude=ns.MICROSECOND)
         self.state["success"] = True
@@ -189,6 +196,7 @@ def setup_longrange_sim(
             "qA": None,
             "qC": None,
             "F_AC": None,
+            "keyRate": None,
             "swap_time": None,
             "success": False,
             "m":None,
@@ -212,9 +220,10 @@ def setup_longrange_sim(
         attempts_total = max(attempts_AB, attempts_BC) if attempts_AB and attempts_BC else None
         swap_time = state["swap_time"]
         F_AC = state["F_AC"]
+        keyRate = state["keyRate"]
 
         results.append(
-            (sim_end_time, attempts_AB, attempts_BC, attempts_total, swap_time, F_AC)
+            (sim_end_time, attempts_AB, attempts_BC, attempts_total, swap_time, F_AC, keyRate)
         )
 
     return results
@@ -242,13 +251,14 @@ if __name__ == "__main__":
         T2_mem = travel_time/8,
     )
 
-    _, attempts_AB, attempts_BC, attempts_total, swap_times, fidelities = zip(*results)
+    _, attempts_AB, attempts_BC, attempts_total, swap_times, fidelities, keyRates = zip(*results)
 
     avg_attempts_AB = sum(a for a in attempts_AB if a is not None) / len(attempts_AB)
     avg_attempts_BC = sum(a for a in attempts_BC if a is not None) / len(attempts_BC)
     avg_attempts_total = sum(a for a in attempts_total if a is not None) / len(attempts_total)
     avg_swap_time = sum(t for t in swap_times if t is not None) / len(swap_times)
     avg_fidelity = sum(f for f in fidelities if f is not None) / len(fidelities)
+    avg_keyRate = sum(k for k in keyRates if k is not None) / len(keyRates)
 
     print(f"Distance           = {distance} km")
     print(f"Shots              = {shots}")
@@ -257,3 +267,4 @@ if __name__ == "__main__":
     print(f"Avg attempts total = {avg_attempts_total:.2f}")
     print(f"Avg swap time      = {avg_swap_time:.3f} microseconds")
     print(f"Avg fidelity A~C   = {avg_fidelity:.4f}")
+    print(f"Avg key rate       = {avg_keyRate:.4f}")

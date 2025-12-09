@@ -24,6 +24,7 @@ def run_distill_then_swap_sims(param_sets):
         results_by_distance = defaultdict(list)
         attempts_by_distance = defaultdict(list)
         fidelities_by_distance = defaultdict(list)
+        keyRates_by_distance = defaultdict(list)
 
         for dist in params["distances"]:
             p_ge = params.get("p_ge", {}).get(f"{dist}km")
@@ -42,16 +43,18 @@ def run_distill_then_swap_sims(param_sets):
             )
 
             dist_key = f"{dist}km"
-            for sim_end_time, attempts_total, F_AC in results:
+            for sim_end_time, attempts_total, F_AC, keyRate in results:
                 results_by_distance[dist_key].append((sim_end_time, attempts_total, F_AC))
                 attempts_by_distance[dist_key].append(attempts_total)
                 fidelities_by_distance[dist_key].append(F_AC)
+                keyRates_by_distance[dist_key].append(keyRate)
 
         all_results[label] = {
             "params": params,
             "results": results_by_distance,
             "attempts_total": attempts_by_distance,
             "fidelities": fidelities_by_distance,
+            "keyRates": keyRates_by_distance,
             "label_full": label_full(params),
             "label_loss": label_loss(params),
             "label_noise": label_noise(params),
@@ -72,6 +75,7 @@ def run_swap_then_distill_sims(param_sets):
         results_by_distance = defaultdict(list)
         attempts_by_distance = defaultdict(list)
         fidelities_by_distance = defaultdict(list)
+        keyRates_by_distance = defaultdict(list)
 
         for dist in params["distances"]:
             p_ge = params.get("p_ge", {}).get(f"{dist}km")
@@ -90,16 +94,18 @@ def run_swap_then_distill_sims(param_sets):
             )
 
             dist_key = f"{dist}km"
-            for sim_end_time, attempts_total, F_AC in results:
+            for sim_end_time, attempts_total, F_AC, keyRate in results:
                 results_by_distance[dist_key].append((sim_end_time, attempts_total, F_AC))
                 attempts_by_distance[dist_key].append(attempts_total)
                 fidelities_by_distance[dist_key].append(F_AC)
+                keyRates_by_distance[dist_key].append(keyRate)
 
         all_results[label] = {
             "params": params,
             "results": results_by_distance,
             "attempts_total": attempts_by_distance,
             "fidelities": fidelities_by_distance,
+            "keyRates": keyRates_by_distance,
             "label_full": label_full(params),
             "label_loss": label_loss(params),
             "label_noise": label_noise(params),

@@ -118,8 +118,12 @@ def setup_sim(
         q1 = AProtocol.qubit 
         q2 = BProtocol.qubit
         fidelity = ns.qubits.qubitapi.fidelity([q1, q2], ideal_state, squared=True)
+        keyRate = secret_key_rate_from_density_matrix(
+                            ns.qubits.reduced_dm([q1,q2]), 
+                            ns.sim_time(magnitude=ns.SECOND)
+                            )
 
-        results.append((simulation_end_time, total_qubits_sent, arrival_time, fidelity))
+        results.append((simulation_end_time, total_qubits_sent, arrival_time, fidelity, keyRate))
 
     return results
 

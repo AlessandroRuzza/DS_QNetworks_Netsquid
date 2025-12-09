@@ -75,7 +75,7 @@ param_sets = [
         "t2": 0,
     },
     # {
-    #     "name": "Low-Noise fibre (T1 = 500km travel time) (ideal memories)",
+    #     "name": "Low-Noise fibre (ideal memories)",
     #     "shots": 1000,
     #     "distances": [5, 20, 50],
     #     "p_loss_init": 0.0,
@@ -86,7 +86,7 @@ param_sets = [
     #     "t2_mem": 0,
     # },
     {
-        "name": "Low-Noise fibre (T1 = 500km travel time) (noisy memories)",
+        "name": "Low-Noise fibre",
         "shots": 1000,
         "distances": [5, 20, 50],
         "p_loss_init": 0.0,
@@ -95,23 +95,14 @@ param_sets = [
         "t2": travel_ns_km * 50,
     },
     {
-        "name": "High-Noise fibre (T1 = 50km travel time)",
+        "name": "High-Noise fibre",
         "shots": 1000,
         "distances": [5, 20, 50],
         "p_loss_init": 0.0,
         "p_loss_length": 0.2,
         "t1": travel_ns_km * 50,
         "t2": travel_ns_km * 5,
-    },   
-    # {
-    #     "name": "Extreme-Noise fibre (T1 = 5km travel time)",
-    #     "shots": 1000,
-    #     "distances": [5, 20, 50],
-    #     "p_loss_init": 0.0,
-    #     "p_loss_length": 0.2,
-    #     "t1": travel_ns_km * 5,
-    #     "t2": travel_ns_km * 0.5,
-    # },
+    },
 ]
 
 def autofill_params(param_sets:list[dict]):

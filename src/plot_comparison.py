@@ -129,8 +129,8 @@ def print_comparison_table(all_res_long, all_res_direct):
     print("\n" + "="*120)
     print("COMPARISON TABLE: Repeater vs Direct Communication")
     print("="*120)
-    print(f"{'Scenario':<30} {'Distance':<12} {'Method':<20} {'Avg Time Units':<18} {'Avg Fidelity':<15} {'P_gen':<10}")
-    print("-"*120)
+    print(f"{'Scenario':<30} {'Distance':<12} {'Method':<20} {'Avg Time Units':<18} {'Avg Fidelity':<15} {'P_gen':<10} {'Secret-Key Rate':<18}")
+    print("-"*138)
     
     for label_long in sorted(all_res_long.keys()):
         # Find matching direct result
@@ -163,28 +163,36 @@ def print_comparison_table(all_res_long, all_res_direct):
             # Calculate statistics for repeater
             attempts_long = data_long["attempts_total"][dist_key_long]
             fidelities_long = [f for f in data_long["fidelities"][dist_key_long] if f is not None]
+            skr_long = data_long["keyRates"][dist_key_long]
+            
             avg_time_long = np.mean(attempts_long) if len(attempts_long) > 0 else 0
             avg_fid_long = np.mean(fidelities_long) if len(fidelities_long) > 0 else 0
+            avg_skr_long = np.mean(skr_long) if len(skr_long) > 0 else 0
+
             p_gen_long = data_long["params"]["p_ge"].get(dist_key_long, 0)
             
             # Calculate statistics for direct
             attempts_direct = data_direct["attempts_total"][dist_key_direct]
             fidelities_direct = [f for f in data_direct["fidelities"][dist_key_direct] if f is not None]
+            skr_direct = data_direct["keyRates"][dist_key_direct]
+            
             avg_time_direct = np.mean(attempts_direct) if len(attempts_direct) > 0 else 0
             avg_fid_direct = np.mean(fidelities_direct) if len(fidelities_direct) > 0 else 0
-            p_gen_direct = data_direct["params"]["p_ge"].get(dist_key_direct, 0)
+            avg_skr_direct = np.mean(skr_direct) if len(skr_direct) > 0 else 0
             
+            p_gen_direct = data_direct["params"]["p_ge"].get(dist_key_direct, 0)
+
             # Print repeater row
             split = scenario_name.split('(')
             if len(split)>=2: split.pop(1)
             scenario_disp = "(".join(split).replace("memories", "mem")
-            print(f"{scenario_disp[:30]:<30} {dist_km*2:>4}km{'':<6} {'Repeater':<20} {avg_time_long:<18.2f} {avg_fid_long:<15.4f} {p_gen_long:<10.4f}")
-            
+            print(f"{scenario_disp[:30]:<30} {dist_km*2:>4}km{'':<6} {'Repeater':<20} {avg_time_long:<18.2f} {avg_fid_long:<15.4f} {p_gen_long:<10.4f} {avg_skr_long:<18.6f}")
+
             # Print direct row
-            print(f"{'':<30} {'':<12} {'Direct':<20} {avg_time_direct:<18.2f} {avg_fid_direct:<15.4f} {p_gen_direct:<10.4f}")
-            print("-"*120)
+            print(f"{'':<30} {'':<12} {'Direct':<20} {avg_time_direct:<18.2f} {avg_fid_direct:<15.4f} {p_gen_direct:<10.4f} {avg_skr_direct:<18.6f}")
+            print("-"*138)
     
-    print("="*120 + "\n")
+    print("="*138 + "\n")
 
 def make_direct_params_from_long(param_sets:list[dict]):
     import copy
