@@ -186,10 +186,10 @@ def print_comparison_table(all_res_long, all_res_direct):
             split = scenario_name.split('(')
             if len(split)>=2: split.pop(1)
             scenario_disp = "(".join(split).replace("memories", "mem")
-            print(f"{scenario_disp[:30]:<30} {dist_km*2:>4}km{'':<6} {'Repeater':<20} {avg_time_long:<18.2f} {avg_fid_long:<15.4f} {p_gen_long:<10.4f} {avg_skr_long:<18.6f}")
+            print(f"{scenario_disp[:30]:<30} {dist_km*2:>4}km{'':<6} {'Repeater':<20} {avg_time_long:<18.2f} {avg_fid_long:<15.4f} {p_gen_long:<10.4f} {avg_skr_long:<18.3f}")
 
             # Print direct row
-            print(f"{'':<30} {'':<12} {'Direct':<20} {avg_time_direct:<18.2f} {avg_fid_direct:<15.4f} {p_gen_direct:<10.4f} {avg_skr_direct:<18.6f}")
+            print(f"{'':<30} {'':<12} {'Direct':<20} {avg_time_direct:<18.2f} {avg_fid_direct:<15.4f} {p_gen_direct:<10.4f} {avg_skr_direct:<18.3f}")
             print("-"*138)
     
     print("="*138 + "\n")
