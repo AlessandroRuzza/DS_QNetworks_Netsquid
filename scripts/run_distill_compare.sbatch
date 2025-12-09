@@ -29,4 +29,4 @@ module load Python/3.12.3-GCCcore-13.3.0
 echo "Value of M set to ${M:-10}. Default = 10."
 echo "Set custom value of M with 'M=X sbatch [...]'"
 
-apptainer exec docker://python:3.12 bash -c "source .venv/bin/activate && python src/plot_swapDistill_vs_longRange.py -m ${M:-10}"
+apptainer exec docker://python:3.12 bash -c "source .venv/bin/activate && python src/plot_distillSwap_vs_swapDistill.py -m ${M:-10}"
