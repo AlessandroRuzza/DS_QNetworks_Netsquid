@@ -49,7 +49,7 @@ def plot_comparison(all_res_long, all_res_direct):
         num_distances = len(valid_distances)
         
         # Create PMF/CDF comparison plot with subplots for each distance
-        fig_pmf_cdf, axes = plt.subplots(2, num_distances, figsize=(6 * num_distances, 10), sharey=True)
+        fig_pmf_cdf, axes = plt.subplots(1, num_distances, figsize=(6 * num_distances, 10), sharey=True)
         if num_distances == 1:
             axes = axes.reshape(-1, 1)
         
@@ -57,8 +57,7 @@ def plot_comparison(all_res_long, all_res_direct):
             attempts_long = data_long["attempts_total"][dist_key_long]
             attempts_direct = data_direct["attempts_total"][dist_key_direct]
             
-            ax_pmf = axes[0, idx]
-            ax_cdf = axes[1, idx]
+            ax_cdf = axes[idx]
             
             for attempts, name, color in [
                 (attempts_long, f"Repeater ({dist_km}km + {dist_km}km)", "C0"),
@@ -68,24 +67,21 @@ def plot_comparison(all_res_long, all_res_direct):
                 x = np.asarray(unique_sorted, dtype=float)
                 y = np.asarray(probs, dtype=float)
                 
-                ax_pmf.plot(x, y, linestyle="-", linewidth=1.2, color=color, label=name)
                 cdf = np.cumsum(y)
                 ax_cdf.plot(x, cdf, linestyle="-", linewidth=1.2, color=color, label=name)
             
-            for ax in (ax_pmf, ax_cdf):
+            for ax in (ax_cdf,):
                 ax.set_xscale("log")
                 ax.set_xlabel("Time units (L/c)", fontsize=11)
                 ax.grid(True, alpha=0.25, which="both")
                 ax.legend(fontsize=9, frameon=False)
             
-            ax_pmf.set_title(f"PMF - {dist_km * 2}km", fontsize=12)
             ax_cdf.set_title(f"CDF - {dist_km * 2}km", fontsize=12)
         
-        axes[0,0].set_ylabel("Probability", fontsize=11)
-        axes[1,0].set_ylabel("Probability", fontsize=11)
-        fig_pmf_cdf.suptitle(f"Repeater vs Direct Communication - PMF/CDF\n{data_long['label_loss']}", fontsize=14)
+        axes[0].set_ylabel("Probability", fontsize=11)
+        fig_pmf_cdf.suptitle(f"Repeater vs Direct Communication - CDF\n{data_long['label_loss']}", fontsize=14)
         fig_pmf_cdf.tight_layout(rect=(0.02, 0.02, 1.0, 0.96))
-        plt.savefig(get_img_path(f"Comparison_PMF_CDF\n{data_long['label_loss']}"), dpi=300, bbox_inches="tight")
+        plt.savefig(get_img_path(f"Comparison_CDF\n{data_long['label_loss']}"), dpi=300, bbox_inches="tight")
         plt.close()
         
         # Create fidelity comparison plot with subplots for each distance
@@ -94,23 +90,52 @@ def plot_comparison(all_res_long, all_res_direct):
             axes_fid = [axes_fid]
         
         for idx, (dist_key_long, dist_key_direct, dist_km) in enumerate(valid_distances):
+            attempts_long = data_long["attempts_total"][dist_key_long]
+            attempts_direct = data_direct["attempts_total"][dist_key_direct]
             fidelities_long = data_long["fidelities"][dist_key_long]
             fidelities_direct = data_direct["fidelities"][dist_key_direct]
             
             ax = axes_fid[idx]
+
+            zipped_long = zip(attempts_long, fidelities_long)
+            zipped_direct = zip(attempts_direct, fidelities_direct)
             
-            fid_long_clean = [f for f in fidelities_long if f is not None]
-            fid_direct_clean = [f for f in fidelities_direct if f is not None]
+            fid_long_bins = {}
+            fid_direct_bins = {}
+
+            for att, fid in zipped_long:
+                fid_long_bins.setdefault(att, []).append(fid)
+            for att, fid in zipped_direct:
+                fid_direct_bins.setdefault(att, []).append(fid)
+
+            Ts_long = sorted(set(attempts_long))
+            violin_long = [fid_long_bins[t] for t in Ts_long]  
+
+            Ts_direct = sorted(set(attempts_direct))
+            violin_direct = [fid_direct_bins[t] for t in Ts_direct]            
             
-            positions = [1, 2]
-            ax.violinplot(
-                [fid_long_clean, fid_direct_clean],
-                positions=positions,
-                widths=0.8,
+            v_long = ax.violinplot(
+                violin_long,
+                positions=Ts_long,
                 showmeans=True,
+                width=0.85,
                 showextrema=False,
             )
-            ax.set_xticks(positions, [f"Repeater\n({dist_km}km + {dist_km}km)", f"Direct\n({dist_km * 2}km)"])
+            for body in v_long["bodies"]:
+                body.set_edgecolor("black")
+                body.set_alpha(1.0)
+            
+            v_short = ax.violinplot(
+                violin_direct,
+                positions=Ts_direct,
+                showmeans=True,
+                width=0.85,
+                showextrema=False,
+            )
+            for body in v_short["bodies"]:
+                body.set_facecolor("orange")
+                body.set_alpha(0.4)
+            # ax.set_xticks(positions, [f"Repeater\n({dist_km}km + {dist_km}km)", f"Direct\n({dist_km * 2}km)"])
             ax.set_title(f"{dist_km * 2}km", fontsize=12)
             ax.grid(True, alpha=0.3, axis='y')
         
