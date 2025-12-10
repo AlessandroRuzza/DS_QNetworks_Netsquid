@@ -49,7 +49,7 @@ def plot_comparison(all_res_long, all_res_direct):
         num_distances = len(valid_distances)
         
         # Create PMF/CDF comparison plot with subplots for each distance
-        fig_pmf_cdf, axes = plt.subplots(1, num_distances, figsize=(6 * num_distances, 10), sharey=True)
+        fig_pmf_cdf, axes = plt.subplots(1, num_distances, figsize=(6 * num_distances, 5), sharey=True)
         if num_distances == 1:
             axes = axes.reshape(-1, 1)
         
@@ -110,33 +110,40 @@ def plot_comparison(all_res_long, all_res_direct):
 
             Ts_long = sorted(set(attempts_long))
             violin_long = [fid_long_bins[t] for t in Ts_long]  
+            means_long = [np.mean(fid_long_bins[t]) for t in Ts_long]
 
             Ts_direct = sorted(set(attempts_direct))
             violin_direct = [fid_direct_bins[t] for t in Ts_direct]            
+            means_direct = [np.mean(fid_direct_bins[t]) for t in Ts_direct]
             
             v_long = ax.violinplot(
                 violin_long,
                 positions=Ts_long,
                 showmeans=True,
-                width=0.85,
+                widths=0.8,
                 showextrema=False,
             )
             for body in v_long["bodies"]:
-                body.set_edgecolor("black")
-                body.set_alpha(1.0)
+                body.set_facecolor("blue")
+                body.set_alpha(0.3)
+            ax.plot(Ts_long, means_long, linestyle="-", linewidth=1.0, color='blue')
             
             v_short = ax.violinplot(
                 violin_direct,
                 positions=Ts_direct,
                 showmeans=True,
-                width=0.85,
+                widths=0.8,
                 showextrema=False,
             )
             for body in v_short["bodies"]:
                 body.set_facecolor("orange")
-                body.set_alpha(0.4)
+                body.set_alpha(0.3)
+            ax.plot(Ts_direct, means_direct, linestyle="-", linewidth=1.0, color='orange')
+            
+
             # ax.set_xticks(positions, [f"Repeater\n({dist_km}km + {dist_km}km)", f"Direct\n({dist_km * 2}km)"])
             ax.set_title(f"{dist_km * 2}km", fontsize=12)
+            ax.set_xscale("log")
             ax.grid(True, alpha=0.3, axis='y')
         
         axes_fid[0].set_ylabel("Bell Fidelity A~C", fontsize=12)
