@@ -290,5 +290,5 @@ if __name__ == "__main__":
     all_res_distil_then = run_distill_then_swap_sims(param_sets)
     all_res_swap_then = run_swap_then_distill_sims(param_sets)
 
-    # print_comparison_table(all_res_distil_then, all_res_swap_then)
+    print_comparison_table(all_res_distil_then, all_res_swap_then)
     plot_distill_then_vs_swap_then(all_res_distil_then, all_res_swap_then)
