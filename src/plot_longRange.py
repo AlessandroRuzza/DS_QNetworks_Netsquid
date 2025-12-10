@@ -265,15 +265,7 @@ def plot_violin_fidelity(
 
         ax.set_title(key, fontsize=11)
         ax.set_xlabel("Time units (L/c)", fontsize=10)
-        # Pick sample tick values
-        if len(Ts) > 20:
-            step = max(1, len(Ts) // 15)
-            tick_positions = Ts[::step]
-            if Ts[-1] not in tick_positions:
-                tick_positions.append(Ts[-1])
-            ax.set_xticks(tick_positions)
-        else:
-            ax.set_xticks(Ts)
+        ax.set_xscale('log')
         ax.grid(True, alpha=0.25)
 
     axes[0].set_ylabel("Fidelity A~C", fontsize=11)
