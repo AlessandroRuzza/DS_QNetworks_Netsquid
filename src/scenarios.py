@@ -9,9 +9,13 @@ def get_img_path(label: str):
     label = label.split(maxsplit=2)[0] + "_" + label.splitlines()[1]
     outdir.mkdir(parents=True, exist_ok=True)
     label = re.sub(r"[μ]", "u", label)
-    label = re.sub(r"\s+", "_", str(label)).strip()
+    label = re.sub(r"$", "", label)
+    label = re.sub(r"\\mu", "u", label)
+    label = re.sub(r"\\infty", "0.0", label)
+    label = re.sub(r"\\mathrm", "", label)
     label = re.sub(r"[^A-Za-z0-9._-]", "_", label)
-    label = re.sub(r"[()]", "", label)
+    label = re.sub(r"[(){}]", "", label)
+    label = re.sub(r"\s+", "_", str(label)).strip()
     label = label[:190] + ".png"
     imgpath = outdir / label
     return imgpath
@@ -27,12 +31,16 @@ def unique_and_probs(data):
 
 def label_loss(params):
     return  f"{params['name']} ({params['p_loss_init']} init, " + \
-            f"{params['p_loss_length']}dB/km) ({params['shots']} shots)"
+            f"{params['p_loss_length']} dB/km) ({params['shots']} shots)"
 def label_noise(params):
-    return  f"{params['name']} (T1={params['t1']/1e3}μs, T2={params['t2']/1e3}μs) ({params['shots']} shots)"
+    T1 = params['t1']/1e3
+    T2 = params['t2']/1e3
+    return  f"{params['name']} (T1={T1 if T1 > 0 else r'$\infty$ '}{r'$\mu$s'}, T2={T2 if T2 > 0 else r'$\infty$ '}{r'$\mu$s'}) ({params['shots']} shots)"
 def label_full(params):
+    T1 = params['t1']/1e3
+    T2 = params['t2']/1e3
     return  f"{params['name']} ({params['p_loss_init']} init, " + \
-            f"{params['p_loss_length']}dB/km, T1={params['t1']/1e3}μs, T2={params['t2']/1e3}μs) ({params['shots']} shots)"
+            f"{params['p_loss_length']} dB/km, T1={T1 if T1 > 0 else r'$\infty$'}{r'$\mu$s'}, T2={T2 if T2 > 0 else r'$\infty$ '}{r'$\mu$s'}) ({params['shots']} shots)"
 
 # Define different parameter sets to test
 travel_ns_km = 1e9 / 2e5 # [ns/km] travel time
@@ -56,7 +64,7 @@ param_sets = [
     #     "t2": travel_ns_km * 22,
     # },
     # {
-    #     "name": "Zero length loss fibre",
+    #     "name": "Zero length-loss fibre",
     #     "shots": 2000,
     #     "distances": [5, 20, 50],
     #     "p_loss_init": 0.5,
@@ -65,7 +73,7 @@ param_sets = [
     #     "t2": 0,
     # },
     {
-        "name": "High length loss fibre",
+        "name": "High length-loss fibre",
         "shots": 1000,
         "distances": [5, 20, 50],
         "p_loss_init": 0.0,

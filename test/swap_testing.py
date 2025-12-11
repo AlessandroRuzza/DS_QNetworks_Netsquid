@@ -66,7 +66,8 @@ def simulateSwap():
     w2 = (4*fid2 - 1) / 3
 
     wFinal = w1*w2
-    fidFinal = fid1*fid2 + ((1-fid1)/3)**2 * 3
+    fidFinal = (3*wFinal + 1)/4
+    # fidFinal = fid1*fid2 + ((1-fid1)/3)**2 * 3
 
     m = swapSim.swap()
     print(m)
