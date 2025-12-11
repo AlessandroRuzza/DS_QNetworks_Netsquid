@@ -90,7 +90,8 @@ def plot_pmf_cdf_arrival_times_with_analytic(arrival_times: dict,
 ################## FIDELITY PLOT ##################################################
 
 def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title, expected=None):
-    plt.figure(figsize=(10, 6))
+    fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+    # plt.figure(figsize=(10, 6))
     if expected is None: expected = {}
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
     for idx, (name, data) in enumerate(fidelities.items()):
@@ -99,18 +100,33 @@ def plot_fidelity_distribution(arrival_times:dict, fidelities:dict, title, expec
         sort = sorted(set(timed_fidelities), key=lambda f: f[0])
         unique_times = [t[0] for t in sort]
         unique_fids = [t[1] for t in sort]
-        plt.plot(unique_times, unique_fids, label=name,
+        ax.plot(unique_times, unique_fids, label=name,
                  linewidth=2, color=color)
         if name not in expected.keys():
             expected[name] = np.mean(data)
-        plt.axhline(expected[name], linestyle='--', color=color, label=f"{name} projection")
-        
-    plt.xlabel("Time units (L/c)", fontsize=12)
-    plt.ylabel("Fidelity (A~B)", fontsize=12)
-    plt.title(title, fontsize=14)
-    plt.legend(fontsize=11)
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
+        ax.axhline(expected[name], linestyle='--', color=color)
+    
+    
+    ax.set_xlabel("Time units (L/c)", fontsize=12)
+    ax.set_ylabel("Fidelity (A~B)", fontsize=12)
+    ax.grid(True, alpha=0.3)
+    ax.legend(
+        title="distance (L)", fontsize=9, title_fontsize=9,
+        frameon=True
+    )
+
+    sim_handle = Line2D([0], [0], color="black", linestyle="-",
+                        markersize=2, linewidth=0.9, label="simulation")
+    ana_handle = Line2D([0], [0], color="black", linestyle="--",
+                        linewidth=0.8, label="analytic")
+    fig.suptitle(title, fontsize=14)
+    fig.legend(
+        handles=[sim_handle, ana_handle],
+        loc="lower center", ncol=2, fontsize=9, frameon=False,
+        bbox_to_anchor=(0.5, 0.03)
+    )
+
+    fig.tight_layout(rect=(0.0, 0.07, 1.0, 0.9))
     plt.savefig(get_img_path(title), dpi=300)
     plt.close()
 

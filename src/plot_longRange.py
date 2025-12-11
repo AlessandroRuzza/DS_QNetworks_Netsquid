@@ -273,7 +273,6 @@ def plot_violin_fidelity(
     fig.tight_layout(rect=(0.02, 0.05, 1.0, 0.92))
 
     plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
-    # plt.show()
     plt.close()
 
 def run_longrange_sims(param_sets:list[dict]):
