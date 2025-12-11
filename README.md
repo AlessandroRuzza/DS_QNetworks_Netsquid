@@ -300,5 +300,4 @@ When adding new protocols:
 If you use this code, please cite the relevant NetSquid papers and your own work.
 
 ## License
-
-[Add your license information here]
+See [LICENSE](LICENSE).
