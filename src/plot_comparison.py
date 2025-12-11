@@ -115,34 +115,27 @@ def plot_comparison(all_res_long, all_res_direct):
             Ts_direct = sorted(set(attempts_direct))
             violin_direct = [fid_direct_bins[t] for t in Ts_direct]            
             means_direct = [np.mean(fid_direct_bins[t]) for t in Ts_direct]
-            
-            v_long = ax.violinplot(
-                violin_long,
-                positions=Ts_long,
-                showmeans=True,
-                widths=0.8,
-                showextrema=False,
-            )
-            for body in v_long["bodies"]:
-                body.set_facecolor("blue")
-                body.set_alpha(0.3)
-            ax.plot(Ts_long, means_long, linestyle="-", linewidth=1.0, color='blue')
-            
-            v_short = ax.violinplot(
-                violin_direct,
-                positions=Ts_direct,
-                showmeans=True,
-                widths=0.8,
-                showextrema=False,
-            )
-            for body in v_short["bodies"]:
-                body.set_facecolor("orange")
-                body.set_alpha(0.3)
-            ax.plot(Ts_direct, means_direct, linestyle="-", linewidth=1.0, color='orange')
+
+            for violin, Ts, means, name, color in [
+                (violin_long, Ts_long, means_long, f"Repeater ({dist_km}km + {dist_km}km)", "C0"),
+                (violin_direct, Ts_direct, means_direct, f"Direct ({dist_km * 2}km)", "C1")
+            ]:
+                v = ax.violinplot(
+                    violin,
+                    positions=Ts,
+                    showmeans=True,
+                    widths=0.8,
+                    showextrema=False,
+                )
+                for body in v["bodies"]:
+                    body.set_facecolor(color)
+                    body.set_alpha(0.3)
+                ax.plot(Ts, means, linestyle="-", linewidth=1.0, color=color, label=name)
             
 
             # ax.set_xticks(positions, [f"Repeater\n({dist_km}km + {dist_km}km)", f"Direct\n({dist_km * 2}km)"])
             ax.set_title(f"{dist_km * 2}km", fontsize=12)
+            ax.legend(fontsize=9, frameon=False)
             ax.set_xscale("log")
             ax.grid(True, alpha=0.3, axis='y')
         
@@ -218,10 +211,10 @@ def print_comparison_table(all_res_long, all_res_direct):
             split = scenario_name.split('(')
             if len(split)>=2: split.pop(1)
             scenario_disp = "(".join(split).replace("memories", "mem")
-            print(f"{scenario_disp[:30]:<30} {dist_km*2:>4}km{'':<6} {'Repeater':<20} {avg_time_long:<18.2f} {avg_fid_long:<15.4f} {p_gen_long:<10.4f} {avg_skr_long:<18.3f}")
+            print(f"{scenario_disp[:30]:<30} {dist_km*2:>4}km{'':<6} {'Repeater':<20} {avg_time_long:<18.2f} {avg_fid_long:<15.4f} {p_gen_long:<10.4f} {avg_skr_long:<18.3e}")
 
             # Print direct row
-            print(f"{'':<30} {'':<12} {'Direct':<20} {avg_time_direct:<18.2f} {avg_fid_direct:<15.4f} {p_gen_direct:<10.4f} {avg_skr_direct:<18.3f}")
+            print(f"{'':<30} {'':<12} {'Direct':<20} {avg_time_direct:<18.2f} {avg_fid_direct:<15.4f} {p_gen_direct:<10.4f} {avg_skr_direct:<18.3e}")
             print("-"*138)
     
     print("="*138 + "\n")

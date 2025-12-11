@@ -142,47 +142,42 @@ def plot_distill_then_vs_swap_then(all_res_distill_then, all_res_swap_then):
             continue
 
         num_distances = len(valid_distances)
-        fig_pmf_cdf, axes = plt.subplots(2, num_distances, figsize=(6 * num_distances, 10), sharey=True)
+        fig_pmf_cdf, axes = plt.subplots(1, num_distances, figsize=(6 * num_distances, 5), sharey=True)
         if num_distances == 1:
             axes = axes.reshape(-1, 1)
 
         for idx, dist_key in enumerate(valid_distances):
-            dist_km = int(dist_key.replace("km", ""))
             attempts_distil = data_distil["attempts_total"][dist_key]
             attempts_swap = data_swap["attempts_total"][dist_key]
 
-            ax_pmf = axes[0, idx]
-            ax_cdf = axes[1, idx]
+            ax_cdf = axes[idx]
 
             for attempts, name, color in [
-                (attempts_distil, "Distill->Swap", "C2"),
-                (attempts_swap, "Swap->Distill", "C3"),
+                (attempts_distil, "Distill->Swap", "C0"),
+                (attempts_swap, "Swap->Distill", "C1"),
             ]:
                 unique_sorted, probs = unique_and_probs(attempts)
                 x = np.asarray(unique_sorted, dtype=float)
                 y = np.asarray(probs, dtype=float)
 
-                ax_pmf.plot(x, y, linestyle="-", linewidth=1.2, color=color, label=name)
                 cdf = np.cumsum(y)
                 ax_cdf.plot(x, cdf, linestyle="-", linewidth=1.2, color=color, label=name)
 
-            for ax in (ax_pmf, ax_cdf):
+            for ax in (ax_cdf,):
                 ax.set_xscale("log")
                 ax.set_xlabel("Time units (L/c)", fontsize=11)
                 ax.grid(True, alpha=0.25, which="both")
                 ax.legend(fontsize=9, frameon=False)
 
-            ax_pmf.set_title(f"PMF - {dist_km}km", fontsize=12)
-            ax_cdf.set_title(f"CDF - {dist_km}km", fontsize=12)
+            ax_cdf.set_title(f"CDF - {dist_key}", fontsize=12)
 
-        axes[0, 0].set_ylabel("Probability", fontsize=11)
-        axes[1, 0].set_ylabel("Probability", fontsize=11)
+        axes[0].set_ylabel("Probability", fontsize=11)
         fig_pmf_cdf.suptitle(
-            f"Distill->Swap vs Swap->Distill - PMF/CDF\n{data_distil['label_loss']}", fontsize=14
+            f"Distill->Swap vs Swap->Distill - CDF\n{data_distil['label_loss']}", fontsize=14
         )
         fig_pmf_cdf.tight_layout(rect=(0.02, 0.02, 1.0, 0.96))
         plt.savefig(
-            get_img_path(f"Comparison_DistillThenSwap_vs_SwapThenDistill_PMF_CDF\n{data_distil['label_loss']}"),
+            get_img_path(f"Comparison_DistillThenSwap_vs_SwapThenDistill_CDF\n{data_distil['label_loss']}"),
             dpi=300,
             bbox_inches="tight",
         )
@@ -191,28 +186,54 @@ def plot_distill_then_vs_swap_then(all_res_distill_then, all_res_swap_then):
         # Fidelity plot
         fig_fid, axes_fid = plt.subplots(1, num_distances, figsize=(6 * num_distances, 5), sharey=True)
         if num_distances == 1:
-            axes_fid = [axes_fid]
+            axes_fid = [axes_fid,]
 
         for idx, dist_key in enumerate(valid_distances):
-            dist_km = int(dist_key.replace("km", ""))
+            attempts_distil = data_distil["attempts_total"][dist_key]
+            attempts_swap = data_swap["attempts_total"][dist_key]
             fidelities_distil = data_distil["fidelities"][dist_key]
             fidelities_swap = data_swap["fidelities"][dist_key]
-
+            
             ax = axes_fid[idx]
 
-            fid_distil_clean = [f for f in fidelities_distil if f is not None]
-            fid_swap_clean = [f for f in fidelities_swap if f is not None]
+            zipped_distil = zip(attempts_distil, fidelities_distil)
+            zipped_swap = zip(attempts_swap, fidelities_swap)
+            
+            fid_distil_bins = {}
+            fid_swap_bins = {}
 
-            positions = [1, 2]
-            ax.violinplot(
-                [fid_distil_clean, fid_swap_clean],
-                positions=positions,
-                widths=0.8,
-                showmeans=True,
-                showextrema=False,
-            )
-            ax.set_xticks(positions, [f"Distill->Swap\n({dist_km}km)", f"Swap->Distill\n({dist_km}km)"])
-            ax.set_title(f"{dist_km}km", fontsize=12)
+            for att, fid in zipped_distil:
+                fid_distil_bins.setdefault(att, []).append(fid)
+            for att, fid in zipped_swap:
+                fid_swap_bins.setdefault(att, []).append(fid)
+
+            Ts_distil = sorted(set(attempts_distil))
+            violin_distil = [fid_distil_bins[t] for t in Ts_distil]  
+            means_distil = [np.mean(fid_distil_bins[t]) for t in Ts_distil]
+
+            Ts_swap = sorted(set(attempts_swap))
+            violin_swap = [fid_swap_bins[t] for t in Ts_swap]            
+            means_swap = [np.mean(fid_swap_bins[t]) for t in Ts_swap]
+
+            for violin, Ts, means, name, color in [
+                (violin_distil, Ts_distil, means_distil, f"Distill->Swap", "C0"),
+                (violin_swap, Ts_swap, means_swap, f"Swap->Distill", "C1")
+            ]:
+                v = ax.violinplot(
+                    violin,
+                    positions=Ts,
+                    showmeans=True,
+                    widths=0.8,
+                    showextrema=False,
+                )
+                for body in v["bodies"]:
+                    body.set_facecolor(color)
+                    body.set_alpha(0.3)
+                ax.plot(Ts, means, linestyle="-", linewidth=1.0, color=color, label=name)
+
+            ax.set_xscale('log')            
+            ax.set_title(dist_key, fontsize=12)
+            ax.legend(fontsize=9, frameon=False)
             ax.grid(True, alpha=0.3, axis="y")
 
         axes_fid[0].set_ylabel("Bell Fidelity A~C", fontsize=12)
@@ -276,10 +297,10 @@ def print_comparison_table(all_res_distil_then, all_res_swap_then):
             avg_fid_swap = np.mean(fidelities_swap) if fidelities_swap else 0
 
             print(
-                f"{scenario_name:<30} {dist_key:<12} {'Distill->Swap':<20} {avg_time_distil:<18.2f} {avg_fid_distil:<15.4f} {avg_skr_distil:<18.3f}"
+                f"{scenario_name:<30} {dist_key:<12} {'Distill->Swap':<20} {avg_time_distil:<18.2f} {avg_fid_distil:<15.4f} {avg_skr_distil:<18.3e}"
             )
             print(
-                f"{'':<30} {'':<12} {'Swap->Distill':<20} {avg_time_swap:<18.2f} {avg_fid_swap:<15.4f} {avg_skr_swap:<18.3f}"
+                f"{'':<30} {'':<12} {'Swap->Distill':<20} {avg_time_swap:<18.2f} {avg_fid_swap:<15.4f} {avg_skr_swap:<18.3e}"
             )
             print("-" * 138)
 
