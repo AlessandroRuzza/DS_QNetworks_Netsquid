@@ -6,7 +6,7 @@ from collections import defaultdict
 import numpy as np
 
 def plot_pmf_cdf_attempts(attempts_dict: dict, title: str, params: dict):
-    fig, (ax_pmf, ax_cdf) = plt.subplots(1, 2, figsize=(12, 5))
+    fig, ax_cdf = plt.subplots(1, 1, figsize=(6, 5))
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
     for idx, (name, data) in enumerate(attempts_dict.items()):
@@ -14,17 +14,6 @@ def plot_pmf_cdf_attempts(attempts_dict: dict, title: str, params: dict):
         x = np.asarray(unique_sorted, dtype=float)
         y = np.asarray(probs, dtype=float)
         color = colors[idx % len(colors)]
-
-        ax_pmf.plot(
-            x,
-            y,
-            # marker="o",
-            markersize=2,
-            linestyle="-",
-            linewidth=0.9,
-            color=color,
-            label=name,
-        )
 
         cdf_sim = np.cumsum(y)
         ax_cdf.plot(
@@ -35,6 +24,7 @@ def plot_pmf_cdf_attempts(attempts_dict: dict, title: str, params: dict):
             linestyle="-",
             linewidth=0.9,
             color=color,
+            label=name,
         )
 
         p_ge = params["p_ge"][name]
@@ -45,27 +35,21 @@ def plot_pmf_cdf_attempts(attempts_dict: dict, title: str, params: dict):
         ) - (p_ge**2) * (1 - p_ge) ** (2 * (t_vals - 1))
         cdf_analytic = (1 - (1 - p_ge) ** t_vals) ** 2
 
-        ax_pmf.plot(t_vals, pmf_analytic, linestyle="--", linewidth=0.8, color=color)
         ax_cdf.plot(t_vals, cdf_analytic, linestyle="--", linewidth=0.8, color=color)
 
-    for ax in (ax_pmf, ax_cdf):
+    for ax in (ax_cdf,):
         ax.set_xscale("log")
         ax.grid(True, alpha=0.25, which="both")
         ax.tick_params(axis="both", labelsize=9)
-
-    ax_pmf.set_xlabel("Time units (L/c)", fontsize=11)
-    ax_pmf.set_ylabel("Probability", fontsize=11)
-    ax_pmf.set_title("PMF", fontsize=12, pad=6)
 
     ax_cdf.set_xlabel("Time units (L/c)", fontsize=11)
     ax_cdf.set_ylabel("Probability", fontsize=11)
     ax_cdf.set_title("CDF", fontsize=12, pad=6)
 
-    ax_pmf.legend(
+    ax_cdf.legend(
         title="distance AB (L)",
         fontsize=9,
         title_fontsize=9,
-        loc="upper right",
         frameon=False,
     )
 
