@@ -136,6 +136,7 @@ def plot_comparison(all_res_long, all_res_direct):
             ax.set_title(f"{dist_km * 2}km", fontsize=12)
             ax.legend(fontsize=9, frameon=False)
             ax.set_xscale("log")
+            ax.set_xlabel("Time units (L/c)", fontsize=11)
             ax.grid(True, alpha=0.3, axis='y')
         
         axes_fid[0].set_ylabel("Bell Fidelity A~C", fontsize=12)
