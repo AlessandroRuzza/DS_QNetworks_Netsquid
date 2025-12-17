@@ -79,7 +79,6 @@ def plot_comparison(all_res_long, all_res_direct):
             ax_cdf.set_title(f"CDF - {dist_km * 2}km", fontsize=12)
         
         axes[0].set_ylabel("Probability", fontsize=11)
-        fig_pmf_cdf.suptitle(f"Repeater vs Direct Communication - CDF\n{data_long['label_loss']}", fontsize=14)
         fig_pmf_cdf.tight_layout(rect=(0.02, 0.02, 1.0, 0.96))
         plt.savefig(get_img_path(f"Comparison_CDF\n{data_long['label_loss']}"), dpi=300, bbox_inches="tight")
         plt.close()
@@ -140,7 +139,6 @@ def plot_comparison(all_res_long, all_res_direct):
             ax.grid(True, alpha=0.3, axis='y')
         
         axes_fid[0].set_ylabel("Bell Fidelity A~C", fontsize=12)
-        fig_fid.suptitle(f"Fidelity Comparison: Repeater vs Direct\n{data_long['label_noise']}", fontsize=14)
         fig_fid.tight_layout(rect=(0.02, 0.02, 1.0, 0.96))
         plt.savefig(get_img_path(f"Comparison_Fidelity\n{data_long['label_noise']}"), dpi=300, bbox_inches="tight")
         plt.close()

@@ -95,7 +95,6 @@ def plot_pmf_cdf_attempts(attempts_dict: dict, title: str, params: dict):
         frameon=False,
         bbox_to_anchor=(0.5, 0.03),
     )
-    fig.suptitle(title, fontsize=14, y=0.97)
     fig.tight_layout(rect=(0.03, 0.08, 1.0, 0.9))
 
     plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
@@ -124,7 +123,6 @@ def plot_fidelity_vs_distance(fidelities_dict: dict, title: str):
 
     plt.xlabel("Distance [km]", fontsize=12)
     plt.ylabel("Fidelity A~C", fontsize=12)
-    plt.title(title, fontsize=14)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")
@@ -195,7 +193,6 @@ def plot_violin_fidelity_binned(attempts_dict, fidelities_dict, title, params: d
         ax.grid(True, alpha=0.25)
 
     axes[0].set_ylabel("Fidelity A~C")
-    fig.suptitle(title)
     fig.tight_layout(rect=(0.02, 0.05, 1.0, 0.95))
 
     # plt.show()
@@ -269,7 +266,6 @@ def plot_violin_fidelity(
         ax.grid(True, alpha=0.25)
 
     axes[0].set_ylabel("Fidelity A~C", fontsize=11)
-    fig.suptitle(title, fontsize=14)
     fig.tight_layout(rect=(0.02, 0.05, 1.0, 0.92))
 
     plt.savefig(get_img_path(title), dpi=300, bbox_inches="tight")

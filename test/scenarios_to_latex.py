@@ -11,11 +11,11 @@ def params_to_latex_table(param_sets):
     # Start the table
     latex = r"\begin{table}[h]" + "\n"
     latex += r"\centering" + "\n"
-    latex += r"\begin{tabular}{|l|c|c|c|c|c|c|}" + "\n"
+    latex += r"\begin{tabular}{|l|c|c|c|c|c|}" + "\n"
     latex += r"\hline" + "\n"
     
     # Header row
-    latex += r"\textbf{Scenario} & \textbf{Shots} & \textbf{Distances (km)} & "
+    latex += r"\textbf{Scenario} & \textbf{Distances (km)} & "
     latex += r"\textbf{$p_\mathrm{init}$} & \textbf{$p_\mathrm{length} \big[\frac{\mathrm{dB}}{\mathrm{km}}\big]$} & "
     latex += r"\textbf{$T_1$ ($\mu$s)} & \textbf{$T_2$ ($\mu$s)} \\" + "\n"
     latex += r"\hline" + "\n"
@@ -23,7 +23,6 @@ def params_to_latex_table(param_sets):
     # Data rows
     for params in param_sets:
         name = params['name'].replace('_', r'\_')
-        shots = params['shots']
         distances = ', '.join(map(str, params['distances']))
         p_loss_init = params['p_loss_init']
         p_loss_length = params['p_loss_length']
@@ -36,7 +35,7 @@ def params_to_latex_table(param_sets):
         t1_str = f"{t1_us:.2f}" if t1_us > 0 else r"$\infty$"
         t2_str = f"{t2_us:.2f}" if t2_us > 0 else r"$\infty$"
         
-        latex += f"{name} & {shots} & {distances} & {p_loss_init} & {p_loss_length} & {t1_str} & {t2_str} \\\\\n"
+        latex += f"{name} & {distances} & {p_loss_init} & {p_loss_length} & {t1_str} & {t2_str} \\\\\n"
         latex += r"\hline" + "\n"
     
     # End the table
@@ -53,19 +52,18 @@ def params_to_detailed_latex_table(param_sets):
     latex = r"\begin{table}[h]" + "\n"
     latex += r"\centering" + "\n"
     latex += r"\small" + "\n"
-    latex += r"\begin{tabular}{|l|c|c|c|c|c|c|c|}" + "\n"
+    latex += r"\begin{tabular}{|l|c|c|c|c|c|c|}" + "\n"
     latex += r"\hline" + "\n"
     
     # Header
-    latex += r"\textbf{Scenario} & \textbf{Distance} & \textbf{Shots} & "
-    latex += r"\textbf{$p_\mathrm{init}$} & \textbf{$p_\mathrm{length} \big[\frac{\mathrm{dB}}{\mathrm{km}}\big]$} & "
-    latex += r"\textbf{$p_{ge}$} & \textbf{$T_1$ ($\mu$s)} & \textbf{$T_2$ ($\mu$s)} \\" + "\n"
+    latex += r"\textbf{Scenario} & \textbf{Distance} & "
+    latex += r"\textbf{$p_\mathrm{init}$} & $p_\mathrm{length}$ [dB/km] & "
+    latex += r"\textbf{$\pge$} & \textbf{$T_1$ ($\mu s$)} & \textbf{$T_2$ ($\mu s$)} \\" + "\n"
     latex += r"\hline" + "\n"
     
     # Data rows
     for params in param_sets:
         name = params['name'].replace('_', r'\_')
-        shots = params['shots']
         p_loss_init = params['p_loss_init']
         p_loss_length = params['p_loss_length']
         
@@ -85,24 +83,25 @@ def params_to_detailed_latex_table(param_sets):
             else:
                 latex += " & "
             
-            latex += f"{dist} km & {shots} & {p_loss_init} & {p_loss_length} dB/km & "
+            latex += f"{dist} km & {p_loss_init} & {p_loss_length} dB/km & "
             latex += f"{p_ge:.4f} & {t1_str} & {t2_str} \\\\\n"
         
         latex += r"\hline" + "\n"
     
     latex += r"\end{tabular}" + "\n"
-    latex += r"\caption{Detailed simulation parameters with $p_{ge}$ for each distance}" + "\n"
+    latex += r"\caption{Detailed simulation parameters with $\pge$ for each distance}" + "\n"
     latex += r"\label{tab:scenarios_detailed}" + "\n"
     latex += r"\end{table}" + "\n"
     
     return latex
 
 # Generate both tables
-print("=" * 80)
-print("BASIC TABLE:")
-print("=" * 80)
-basic_table = params_to_latex_table(param_sets)
-print(basic_table)
+basic_table = None
+# print("=" * 80)
+# print("BASIC TABLE:")
+# print("=" * 80)
+# basic_table = params_to_latex_table(param_sets)
+# print(basic_table)
 
 print("\n" + "=" * 80)
 print("DETAILED TABLE (with p_ge for each distance):")
@@ -115,9 +114,11 @@ output_file = Path(__file__).resolve().parent.parent / "latex" / "scenarios_tabl
 output_file.parent.mkdir(parents=True, exist_ok=True)
 
 with open(output_file, 'w') as f:
-    f.write("% Basic table\n")
-    f.write(basic_table)
-    f.write("\n\n% Detailed table\n")
+    if basic_table is not None:
+        f.write("% Basic table\n")
+        f.write(basic_table)
+    f.write("\n\n")
+    f.write("% Detailed table\n")
     f.write(detailed_table)
 
 print(f"\n\nTables saved to: {output_file}")

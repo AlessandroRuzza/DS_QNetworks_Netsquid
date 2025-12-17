@@ -172,9 +172,7 @@ def plot_distill_then_vs_swap_then(all_res_distill_then, all_res_swap_then):
             ax_cdf.set_title(f"CDF - {dist_key}", fontsize=12)
 
         axes[0].set_ylabel("Probability", fontsize=11)
-        fig_pmf_cdf.suptitle(
-            f"Distill->Swap vs Swap->Distill - CDF\n{data_distil['label_loss']}", fontsize=14
-        )
+
         fig_pmf_cdf.tight_layout(rect=(0.02, 0.02, 1.0, 0.96))
         plt.savefig(
             get_img_path(f"Comparison_DistillThenSwap_vs_SwapThenDistill_CDF\n{data_distil['label_loss']}"),
@@ -237,9 +235,7 @@ def plot_distill_then_vs_swap_then(all_res_distill_then, all_res_swap_then):
             ax.grid(True, alpha=0.3, axis="y")
 
         axes_fid[0].set_ylabel("Bell Fidelity A~C", fontsize=12)
-        fig_fid.suptitle(
-            f"Fidelity Comparison: Distill->Swap vs Swap->Distill\n{data_distil['label_noise']}", fontsize=14
-        )
+        
         fig_fid.tight_layout(rect=(0.02, 0.02, 1.0, 0.96))
         plt.savefig(
             get_img_path(

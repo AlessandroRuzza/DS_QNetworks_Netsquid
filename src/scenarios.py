@@ -95,7 +95,7 @@ param_sets = [
     {
         "name": "Low-Noise fibre",
         "shots": 1000,
-        "distances": [5, 20, 50],
+        "distances": [5, 50],
         "p_loss_init": 0.0,
         "p_loss_length": 0.2,
         "t1": travel_ns_km * 500,
@@ -104,7 +104,7 @@ param_sets = [
     {
         "name": "High-Noise fibre",
         "shots": 1000,
-        "distances": [5, 20, 50],
+        "distances": [5, 50],
         "p_loss_init": 0.0,
         "p_loss_length": 0.2,
         "t1": travel_ns_km * 50,

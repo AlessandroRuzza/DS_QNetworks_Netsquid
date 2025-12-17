@@ -139,7 +139,6 @@ def plot_distil_vs_longrange(all_res_distil, all_res_long):
         
         axes[0,0].set_ylabel("Probability", fontsize=11)
         axes[1,0].set_ylabel("Probability", fontsize=11)
-        fig_pmf_cdf.suptitle(f"Swap+Distill vs Simple Swap - PMF/CDF\n{data_distil['label_loss']}", fontsize=14)
         fig_pmf_cdf.tight_layout(rect=(0.02, 0.02, 1.0, 0.96))
         plt.savefig(get_img_path(f"Comparison_Distil_vs_LongRange_PMF_CDF\n{data_distil['label_loss']}"), dpi=300, bbox_inches="tight")
         plt.close()
@@ -172,7 +171,6 @@ def plot_distil_vs_longrange(all_res_distil, all_res_long):
             ax.grid(True, alpha=0.3, axis='y')
         
         axes_fid[0].set_ylabel("Bell Fidelity A~C", fontsize=12)
-        fig_fid.suptitle(f"Fidelity Comparison: Swap+Distill vs Simple Swap\n{data_distil['label_noise']}", fontsize=14)
         fig_fid.tight_layout(rect=(0.02, 0.02, 1.0, 0.96))
         plt.savefig(get_img_path(f"Comparison_Distil_vs_LongRange_Fidelity\n{data_distil['label_noise']}"), dpi=300, bbox_inches="tight")
         plt.close()
